@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Supper — Interactive Prototype</title>
+<style>
+:root{
+  --green:#0A3020; --green2:#1A4D2E; --gold:#D4AF37; --gold2:#B8932B;
+  --cream:#FAF7EF; --cream2:#F2ECDD; --surface:#FFFFFF; --ink:#1A1A1A;
+  --muted:#6B6B6B; --faint:#9A9A92; --line:#E7E1D2; --line2:#EEE9DC;
+  --ok:#2E7D46; --okbg:#E7F2EA; --err:#D32F2F; --warn:#F57C00;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:Calibri,"Segoe UI",system-ui,-apple-system,sans-serif;
+  --r:18px; --shadow:0 10px 30px rgba(10,48,32,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#E9E4D6;font-family:var(--sans);color:var(--ink)}
+body{padding:26px 16px 70px}
+.topbar{max-width:1180px;margin:0 auto 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brandtag{font-family:var(--serif);font-weight:bold;color:var(--green);font-size:22px;letter-spacing:.5px}
+.brandtag .dot{color:var(--gold)}
+.subtag{color:var(--muted);font-size:13px}
+.btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{border:1px solid var(--green);background:#fff;color:var(--green);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.tbtn.solid{background:var(--green);color:#fff}
+.legend{max-width:1180px;margin:0 auto 16px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend b{color:var(--ink)}
+.stage{display:flex;justify-content:center}
+.phonewrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.device{position:relative;width:390px;height:800px;background:var(--cream);border-radius:46px;
+  box-shadow:0 0 0 12px #11140f, 0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+.statusbar{position:absolute;top:0;left:0;right:0;height:44px;z-index:50;display:flex;
+  align-items:center;justify-content:space-between;padding:0 26px;font-size:14px;font-weight:700;
+  color:var(--ink);pointer-events:none}
+.statusbar.light{color:#fff}
+.sb-r{display:flex;align-items:center;gap:5px}
+.sb-r i{display:inline-block;width:17px;height:11px;background:currentColor;border-radius:2px;-webkit-mask:linear-gradient(#000 0 0);opacity:.9}
+.sb-bars{width:18px;height:11px;background:
+   linear-gradient(currentColor,currentColor) 0 100%/3px 4px no-repeat,
+   linear-gradient(currentColor,currentColor) 5px 100%/3px 7px no-repeat,
+   linear-gradient(currentColor,currentColor) 10px 100%/3px 9px no-repeat,
+   linear-gradient(currentColor,currentColor) 15px 100%/3px 11px no-repeat}
+.sb-wifi{width:15px;height:11px;background:radial-gradient(circle at 50% 100%, currentColor 0 2px, transparent 3px),
+   radial-gradient(circle at 50% 100%, transparent 0 5px, currentColor 6px 7px, transparent 8px),
+   radial-gradient(circle at 50% 100%, transparent 0 8px, currentColor 9px 10px, transparent 11px)}
+.sb-batt{width:24px;height:12px;border:1.5px solid currentColor;border-radius:3px;position:relative}
+.sb-batt::before{content:"";position:absolute;inset:2px;right:7px;background:currentColor;border-radius:1px}
+.sb-batt::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:6px;background:currentColor;border-radius:2px}
+.viewport{position:absolute;inset:0}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--cream)}
+.screen.active{display:flex;animation:fade .25s ease}
+.screen.active{animation:slidein .32s cubic-bezier(.2,.7,.3,1)}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+body.clean .apinote{display:none}
+body.clean .caption{visibility:hidden}
+.appbar{height:52px;min-height:52px;margin-top:44px;display:flex;align-items:center;padding:0 18px;gap:10px}
+.back{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--green);font-size:20px}
+.back:hover{background:var(--cream2)}
+.abtitle{font-size:14px;color:var(--muted);font-weight:600}
+.scroll{flex:1;overflow-y:auto;padding:6px 26px 30px}
+.scroll::-webkit-scrollbar{width:0}
+.nomargintop{margin-top:44px}
+h1.t{font-family:var(--serif);font-weight:bold;color:var(--green);font-size:27px;line-height:1.2;margin:6px 0 0}
+h1.t.center{text-align:center}
+.sub{color:var(--muted);font-size:14.5px;line-height:1.5;margin:10px 0 0}
+.sub.center{text-align:center}
+.spacer{flex:1}
+/* buttons */
+.cta{display:flex;align-items:center;justify-content:center;width:100%;height:54px;border:none;border-radius:14px;
+  font-family:var(--sans);font-size:16px;font-weight:700;cursor:pointer;margin-top:12px}
+.cta.green{background:var(--green);color:#fff}
+.cta.gold{background:var(--gold);color:var(--green)}
+.cta.outline{background:transparent;color:var(--green);border:1.5px solid var(--green)}
+.cta.ghost{background:transparent;color:var(--green);height:46px;font-weight:600}
+.cta:active{transform:translateY(1px)}
+.cta[disabled]{opacity:.45;cursor:not-allowed}
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card+.card{margin-top:12px}
+.optcard{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1.5px solid var(--line);
+  border-radius:var(--r);padding:16px;box-shadow:var(--shadow);cursor:pointer;margin-top:14px}
+.optcard:hover{border-color:var(--gold)}
+.optcard.sel{border-color:var(--green);box-shadow:0 0 0 2px rgba(10,48,32,.12),var(--shadow)}
+.optcard .ic{width:46px;height:46px;border-radius:12px;background:var(--cream2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.optcard h3{margin:0;font-size:16px;color:var(--ink)}
+.optcard p{margin:5px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
+.chev{margin-left:auto;color:var(--faint);font-size:20px;align-self:center}
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);margin-left:auto;align-self:center;flex-shrink:0}
+.optcard.sel .radio{border-color:var(--green);background:var(--green);box-shadow:inset 0 0 0 4px #fff}
+/* rows */
+.row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line2);font-size:14.5px}
+.row:last-child{border-bottom:none}
+.row .k{color:var(--muted)} .row .v{color:var(--ink);font-weight:600;text-align:right}
+.listcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.li{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line2);cursor:pointer}
+.li:last-child{border-bottom:none}
+.li:hover{background:var(--cream)}
+.li .ic{width:40px;height:40px;border-radius:11px;background:var(--cream2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.li h4{margin:0;font-size:15.5px}.li p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}
+.pill.gold{background:#F6EFD8;color:var(--gold2)} .pill.green{background:var(--okbg);color:var(--ok)}
+.pill.grey{background:#EDEAE0;color:var(--faint)}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+.legaldim{font-size:11.5px;color:var(--faint);line-height:1.5}
+.amount{font-family:var(--serif);font-weight:bold;color:var(--ink);font-size:46px;text-align:center;letter-spacing:-1px}
+.amount small{font-size:16px;color:var(--muted);font-weight:normal;display:block;font-family:var(--sans)}
+.rng{-webkit-appearance:none;width:100%;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--gold) 50%,var(--line) 50%);outline:none;margin:8px 0}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
+.rngends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.check{display:flex;gap:11px;align-items:flex-start;padding:13px 0;cursor:pointer}
+.check .bx{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.check.on .bx{background:var(--green);border-color:var(--green)}
+.check span{font-size:13.5px;line-height:1.5;color:var(--ink)}
+.check a{color:var(--green2);text-decoration:underline}
+.seg{display:flex;gap:8px}
+.seg .yn{flex:1;height:44px;border:1.5px solid var(--line);border-radius:11px;background:#fff;font-weight:700;color:var(--ink);cursor:pointer}
+.seg .yn.on{background:var(--green);color:#fff;border-color:var(--green)}
+.field{margin-top:16px}
+.field label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
+.field input{width:100%;height:50px;border:1.5px solid var(--line);border-radius:12px;padding:0 14px;font-size:16px;font-family:var(--sans);background:#fff}
+.field input:focus{outline:none;border-color:var(--green)}
+.otp{display:flex;gap:9px;justify-content:center;margin:18px 0}
+.otp b{width:44px;height:54px;border:1.5px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-family:var(--serif);background:#fff}
+.otp b.f{border-color:var(--green)}
+/* hero motif */
+.hero{height:182px;border-radius:18px;margin-top:14px;background:
+   radial-gradient(120% 90% at 80% 10%, #16432c 0%, #0A3020 60%);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.hero.cream{background:radial-gradient(120% 120% at 70% 0,#F4EEDF,#EadFc9)}
+.platemotif{opacity:.95}
+.confetti{position:absolute;inset:0;pointer-events:none}
+/* growth illustration (onboarding) */
+.growth{position:relative;height:236px;border-radius:18px;margin-top:16px;overflow:visible;
+  background:radial-gradient(120% 120% at 70% 0,#F4EEDF,#EadFc9);border:1px solid var(--line)}
+.illus-tag{position:absolute;top:10px;left:12px;font-size:9.5px;font-weight:700;letter-spacing:1px;
+  color:var(--gold2);background:#F6EFD8;border:1px solid #E4D49B;border-radius:999px;padding:3px 9px;z-index:3}
+.gchip{position:absolute;background:#fff;border:1px solid var(--line);border-radius:11px;padding:6px 11px;
+  box-shadow:var(--shadow);text-align:left;z-index:2}
+.gchip .gl{font-size:9px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;font-weight:700;display:block}
+.gchip .gv{font-family:var(--serif);font-size:16px;color:var(--green);font-weight:bold;line-height:1.15}
+.planrow{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--line2)}
+.planrow .pname{font-size:13px;font-weight:700;letter-spacing:1px;color:var(--gold2);text-transform:uppercase}
+.planrow .pprice{font-family:var(--serif);font-weight:bold;color:var(--ink);font-size:32px;letter-spacing:-.5px}
+.planrow .pprice small{font-size:14px;color:var(--muted);font-weight:normal;font-family:var(--sans)}
+.tagline{text-align:center;font-family:var(--serif);font-style:italic;color:var(--green2);font-size:15px;margin:16px 0 2px}
+.toast{position:absolute;left:16px;right:16px;bottom:84px;z-index:70;background:var(--green);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.4;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+.setupprog{margin:2px 0 14px}
+.setupprog .lbl{font-size:11px;color:var(--gold2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.setupprog .bar{height:6px;border-radius:6px;background:var(--cream2);overflow:hidden}
+.setupprog .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:6px}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0 12px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:700;color:var(--green);cursor:pointer}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+/* tabbar */
+.tabbar{height:64px;min-height:64px;display:flex;background:#fff;border-top:1px solid var(--line);align-items:center;justify-content:space-around;padding-bottom:4px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--faint);cursor:pointer;flex:1}
+.tab.on{color:var(--green)}
+.tab svg{width:22px;height:22px}
+.badgehead{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.greet{font-family:var(--serif);font-size:24px;color:var(--green);font-weight:bold}
+.bell{width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.stat{font-family:var(--serif);font-size:38px;font-weight:bold;color:var(--ink);letter-spacing:-1px}
+.up{color:var(--ok);font-weight:700;font-size:14px}
+.chart{height:120px;margin:10px 0;border-radius:12px;overflow:hidden}
+.segt{display:flex;gap:6px;margin-top:8px}
+.segt b{flex:1;text-align:center;font-size:12px;padding:7px 0;border-radius:8px;color:var(--muted);cursor:pointer}
+.segt b.on{background:var(--green);color:#fff}
+.sectitle{font-size:13px;font-weight:700;color:var(--muted);margin:20px 0 8px;text-transform:none}
+/* journey hub */
+.progwrap{margin:6px 0 4px}
+.progbar{height:9px;border-radius:9px;background:var(--cream2);overflow:hidden}
+.progbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:9px}
+.grp{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.grp.cur{background:var(--green);border-color:var(--green)}
+.grphead{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer}
+.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.dot.done{background:var(--ok)} .dot.cur{background:var(--gold)} .dot.todo{background:#D9D4C6}
+.grphead h4{margin:0;font-size:15.5px;flex:1}
+.grp.cur .grphead h4{color:#fff}
+.grp.cur .grphead .meta{color:#D8E4D8}
+.meta{font-size:12px;color:var(--muted)}
+.kids{padding:0 16px 6px 40px;display:none}
+.kids.open{display:block}
+.kid{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:13.5px;border-top:1px solid var(--line2)}
+.grp.cur .kid{border-color:rgba(255,255,255,.12);color:#EAF1EA}
+.caret{margin-left:auto;color:var(--faint);transition:transform .2s;padding-left:6px}
+.caret.open{transform:rotate(90deg)}
+.kmark{margin-left:auto;font-size:14px;color:var(--faint)}
+.kmark.ok{color:var(--ok)} .kmark.gold{color:var(--gold)}
+.grp.cur .kmark.ok{color:#8FD6A2}
+.grp.isdone .grphead h4{color:var(--muted)}
+.grp.isdone{background:#FCFBF6}
+.jr-allset{background:var(--okbg);color:var(--ok);border-radius:14px;padding:14px;text-align:center;font-weight:600;font-size:13.5px;margin-top:16px}
+.banner{background:#FFF8E6;border:1px solid #F0E2B6;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#8a6d12;display:flex;gap:9px;margin-top:14px}
+.banner.lock::before{content:"🔒"}
+.disc{background:var(--cream2);border-radius:12px;padding:13px 14px;font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:12px}
+.apinote{font-family:ui-monospace,monospace;font-size:11px;color:var(--gold2);background:#FBF6E6;border:1px dashed #E4D49B;border-radius:8px;padding:6px 9px;margin-top:12px}
+.caption{font-size:13px;color:#3a3a32;max-width:390px;text-align:center;min-height:34px}
+.caption b{color:#11140f}
+/* dark theme (number / SIM sub-flow) */
+.screen.dark{background:linear-gradient(180deg,#0d3a25 0%,#0A3020 55%,#082619 100%)}
+.screen.dark .abtitle{color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;font-size:12px}
+.screen.dark .back{color:#fff;background:rgba(255,255,255,.10)}
+.screen.dark .back:hover{background:rgba(255,255,255,.18)}
+.screen.dark .eyebrow{color:var(--gold);font-size:11px;letter-spacing:2.5px;font-weight:700;text-transform:uppercase;margin-top:2px}
+.screen.dark h1.t{color:#fff;margin-top:6px}
+.screen.dark .sub{color:#AFC0AE}
+.screen.dark .rule{height:1px;background:rgba(255,255,255,.12);margin:14px 0 4px}
+.screen.dark .optcard{background:rgba(255,255,255,.045);border:1.5px solid rgba(255,255,255,.16);box-shadow:none}
+.screen.dark .optcard h3{color:#fff}.screen.dark .optcard p{color:#A9BAA9}
+.screen.dark .optcard.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.screen.dark .cta.outline{color:var(--gold);border-color:var(--gold)}
+.screen.dark .field label{color:#9DB29D;text-transform:uppercase;letter-spacing:.6px;font-size:11px}
+.screen.dark .field input{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);color:#fff}
+.screen.dark .field input::placeholder{color:#7C8E7C}
+.screen.dark .meta{color:#9DB29D}
+.eyebrow{color:var(--gold2);font-size:11px;letter-spacing:2.5px;font-weight:700;text-transform:uppercase;margin-top:2px}
+.rule{height:1px;background:var(--line);margin:14px 0 4px}
+.goldticks{color:var(--gold2);font-size:12.5px;font-weight:700;margin-top:9px}
+.infobox{background:var(--cream2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:14px}
+.step{display:flex;align-items:center;gap:13px;padding:11px 0;color:var(--ink);font-size:14.5px}
+.step .num{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.codebox{border:1.5px dashed var(--gold);border-radius:12px;padding:14px;margin-top:16px;background:#FBF6E6}
+.codebox .code{font-family:ui-monospace,monospace;color:var(--gold2);font-size:18px;letter-spacing:3px;text-align:center;margin-top:4px}
+.demo{display:block;text-align:center;margin-top:16px;font-size:12px;color:var(--faint);text-decoration:underline;cursor:pointer}
+.warnic{width:74px;height:74px;border-radius:50%;background:#FBEAEA;color:var(--err);display:flex;align-items:center;justify-content:center;font-size:36px;margin:10px auto 0}
+.obemoji{font-size:64px;margin-bottom:8px}
+.skip{margin-left:auto;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
+.dots{display:flex;gap:7px;justify-content:center;margin-bottom:14px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--gold);width:22px;border-radius:4px}
+.ordiv{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px;font-weight:700;margin:18px 0}
+.ordiv span{flex:1;height:1px;background:var(--line)}
+.pwreq{display:grid;gap:5px;margin-top:10px;font-size:12px;color:var(--ok)}
+.disclabel{font-size:11.5px;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px;margin-top:16px}
+.acc{border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden;background:#fff}
+.acchead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;cursor:pointer;font-size:11.5px;font-weight:700;color:var(--gold2);text-transform:uppercase;letter-spacing:.5px}
+.accbody{display:none;padding:0 14px 12px}
+.acc.open .accbody{display:block}
+.acc.open .acchead .caret{transform:rotate(90deg)}
+/* screen index overlay */
+.index{position:fixed;inset:0;background:rgba(17,20,15,.55);display:none;z-index:200;padding:30px 16px;overflow:auto}
+.index.open{display:block}
+.indexpanel{max-width:1100px;margin:0 auto;background:#fff;border-radius:18px;padding:22px}
+.index h2{font-family:var(--serif);color:var(--green);margin:0 0 4px}
+.index .close{float:right;cursor:pointer;font-size:22px;color:var(--muted)}
+.idxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;margin-top:14px}
+.idxgrp h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--gold2);margin:0 0 8px}
+.idxgrp a{display:block;padding:7px 10px;border-radius:8px;font-size:13.5px;color:var(--ink);text-decoration:none;cursor:pointer}
+.idxgrp a:hover{background:var(--cream)}
+.idxgrp a span{color:var(--faint);font-size:11px;margin-right:6px}
+@media(max-width:430px){.device{transform:scale(.92);transform-origin:top center}}
+</style>
+</head>
+<body class="clean">
+
+<div class="topbar">
+  <div class="brandtag">the supper<span class="dot">.</span></div>
+  <div class="subtag">Interactive prototype · full app experience · mobile (390px)</div>
+  <div class="btns">
+    <button class="tbtn solid" onclick="openIndex()">☰ All screens</button>
+    <button class="tbtn" onclick="go('splash')">↻ Restart</button>
+    <button class="tbtn" onclick="document.body.classList.toggle('clean')">⚙ Dev notes</button>
+  </div>
+</div>
+<div class="legend">
+  <span><b>Flows:</b></span>
+  <span>① Initial → ② Micro-invest only → ③ Your Journey + Compliance → ④ Get a plan</span>
+  <span>· Tap buttons to advance · ‹ to go back · data noted as <code>GET /status</code> etc.</span>
+</div>
+
+<div class="stage">
+ <div class="phonewrap">
+  <div class="device">
+    <div class="statusbar" id="statusbar"><span>9:41</span>
+      <span class="sb-r"><span class="sb-bars"></span><span class="sb-wifi"></span><span class="sb-batt"></span></span>
+    </div>
+    <div class="viewport" id="viewport">
+
+    <!-- ============ 1. SPLASH ============ -->
+    <section class="screen" id="splash" data-dark="1">
+      <div style="position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 18%,#15402a,#0A3020 70%);"></div>
+      <div style="position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px">
+        <svg width="92" height="92" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#D4AF37" stroke-width="2.5"/><circle cx="50" cy="22" r="4.5" fill="#D4AF37"/><text x="50" y="62" text-anchor="middle" font-family="Georgia" font-size="40" font-weight="bold" fill="#D4AF37">ts</text></svg>
+        <div style="font-family:var(--serif);color:#fff;font-size:30px;letter-spacing:6px;margin-top:18px;font-weight:bold">THE SUPPER</div>
+        <div style="color:var(--gold);font-size:11px;letter-spacing:4px;margin-top:8px">EVERYONE GETS A BITE</div>
+        <div style="margin-top:34px">
+          <svg width="150" height="90" viewBox="0 0 200 120" class="platemotif"><ellipse cx="100" cy="62" rx="58" ry="52" fill="none" stroke="#C8A646" stroke-width="2"/><ellipse cx="100" cy="62" rx="42" ry="38" fill="none" stroke="#C8A646" stroke-width="1.4" opacity=".7"/><g stroke="#D4AF37" stroke-width="3" stroke-linecap="round"><line x1="34" y1="22" x2="34" y2="104"/><line x1="26" y1="22" x2="26" y2="46"/><line x1="42" y1="22" x2="42" y2="46"/><line x1="170" y1="22" x2="170" y2="104"/><path d="M162 22 q8 14 8 30" fill="none"/></g></svg>
+        </div>
+      </div>
+      <div style="position:relative;padding:26px"><button class="cta gold" onclick="go('onboarding')">Enter</button></div>
+    </section>
+
+    <!-- ============ 1b. ONBOARDING — "SEE IT IN ACTION" (single engaging screen) ============ -->
+    <section class="screen" id="onboarding">
+      <div class="appbar"><div class="abtitle">Welcome</div><span class="skip" onclick="go('login')">Skip</span></div>
+      <div class="scroll" style="text-align:center;display:flex;flex-direction:column;justify-content:center;padding-bottom:8px">
+        <div class="obslide" data-i="0">
+          <div class="obemoji">💸</div>
+          <h1 class="t center" style="font-size:28px">Your bills leave. Every month.</h1>
+          <p class="sub center" style="font-size:16px">Without fail. Without return.</p>
+        </div>
+        <div class="obslide" data-i="1" style="display:none">
+          <div class="obemoji">🏛️</div>
+          <h1 class="t center" style="font-size:28px">Everyone at the table gets fed.</h1>
+          <p class="sub center" style="font-size:16px">Corporations. Banks. Shareholders.</p>
+        </div>
+        <div class="obslide" data-i="2" style="display:none">
+          <div class="obemoji">⭐</div>
+          <h1 class="t center" style="font-size:28px">Until now. You get a seat.</h1>
+          <p class="sub center" style="font-size:16px">The Supper returns your margin as ETF investments.</p>
+        </div>
+      </div>
+      <div style="padding:8px 26px 28px">
+        <div class="dots"><i class="on"></i><i></i><i></i></div>
+        <button class="cta green" id="ob-btn" onclick="obNext()">Next</button>
+      </div>
+    </section>
+
+    <!-- ============ 3. LOGIN (from app · AuthScreen) ============ -->
+    <section class="screen" id="login">
+      <div class="appbar"></div>
+      <div class="scroll">
+        <h1 class="t center" style="margin-top:20px">Welcome Back</h1>
+        <p class="sub center">Sign in to your account</p>
+        <div class="field"><label>Email</label><input type="email" placeholder="Enter your email" value="john.smith@email.com"></div>
+        <div class="field"><label>Password</label><input type="password" placeholder="Enter your password" value="••••••••"></div>
+        <div style="text-align:center;margin-top:20px"><a style="color:var(--gold2);font-size:14px;font-weight:600;cursor:pointer" onclick="go('forgot')">Forgot Password?</a></div>
+        <button class="cta gold" style="margin-top:24px" onclick="go('choose')">Sign In</button>
+        <div class="ordiv"><span></span>OR<span></span></div>
+        <div style="text-align:center;font-size:14px;color:var(--muted)">Don't have an account? <a style="color:var(--gold2);font-weight:700;cursor:pointer" onclick="go('signup')">Sign Up</a></div>
+        <div class="apinote">POST /auth/login → success → GET /status → journey selection</div>
+      </div>
+    </section>
+
+    <!-- ============ 3b. SIGN UP (from app · SignUpTabContent) ============ -->
+    <section class="screen" id="signup">
+      <div class="appbar"><div class="back" onclick="back()">‹</div></div>
+      <div class="scroll">
+        <div class="eyebrow">The Supper</div>
+        <h1 class="t">Create Account</h1>
+        <p class="sub">Join the community.</p>
+        <div class="field"><label>First Name</label><input placeholder="John"></div>
+        <div class="field"><label>Last Name</label><input placeholder="Doe"></div>
+        <div class="field"><label>Email</label><input type="email" placeholder="Enter your email"></div>
+        <div class="field"><label>Phone Number</label><input inputmode="tel" placeholder="+61 4XX XXX XXX"></div>
+        <div class="field"><label>Password</label><input type="password" placeholder="Enter your password"></div>
+        <div class="pwreq">
+          <div>✓ At least 8 characters</div>
+          <div>✓ One uppercase letter (A–Z)</div>
+          <div>✓ One lowercase letter (a–z)</div>
+          <div>✓ One number (0–9)</div>
+          <div>✓ One special character (!@#$%^&amp;*)</div>
+        </div>
+        <div class="apinote">POST /auth/signup {first_name, last_name, email, phone, password}</div>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta gold" onclick="go('confirm-email')">Create Account</button>
+        <div style="text-align:center;font-size:14px;color:var(--muted);margin-top:14px">Already have an account? <a style="color:var(--gold2);font-weight:700;cursor:pointer" onclick="go('login')">Sign In</a></div>
+      </div>
+    </section>
+
+    <!-- ============ 3c. CONFIRM EMAIL (ConfirmSignUpScreen) ============ -->
+    <section class="screen" id="confirm-email">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Verify Email</div></div>
+      <div class="scroll">
+        <h1 class="t center">Verify your email</h1>
+        <p class="sub center">We sent a 6-digit code to <b>john.smith@email.com</b>.</p>
+        <div class="otp"><b class="f">2</b><b>4</b><b>6</b><b></b><b></b><b></b></div>
+        <p class="sub center" style="font-size:13px">Didn't receive a code? <a style="color:var(--gold2);font-weight:600;cursor:pointer">Resend code</a></p>
+        <div class="apinote">POST /auth/confirm-signup {email, code} → sign in</div>
+      </div>
+      <div style="padding:12px 26px 26px"><button class="cta gold" onclick="go('login')">Confirm</button></div>
+    </section>
+
+    <!-- ============ 3d. FORGOT PASSWORD (request code) ============ -->
+    <section class="screen" id="forgot">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Reset Password</div></div>
+      <div class="scroll">
+        <h1 class="t">Reset Password</h1>
+        <p class="sub">Enter the email address associated with your account.</p>
+        <div class="field"><label>Email</label><input type="email" placeholder="Enter your email" value="john.smith@email.com"></div>
+        <div class="apinote">POST /auth/forgot-password {email}</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta gold" onclick="go('forgot-reset')">Request Reset Code</button></div>
+    </section>
+
+    <!-- ============ 3e. FORGOT PASSWORD (set new) ============ -->
+    <section class="screen" id="forgot-reset">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Reset Password</div></div>
+      <div class="scroll">
+        <h1 class="t">Enter new password</h1>
+        <p class="sub">Verify the code and set your new password.</p>
+        <div class="field"><label>Verification code</label><input inputmode="numeric" placeholder="6-digit code"></div>
+        <div class="field"><label>New Password</label><input type="password" placeholder="New password (min 8 chars)"></div>
+        <div class="field"><label>Confirm Password</label><input type="password" placeholder="Confirm password"></div>
+        <div class="apinote">POST /auth/confirm-forgot-password {email, code, new_password}</div>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta gold" onclick="go('login')">Confirm Reset</button>
+        <button class="cta ghost" onclick="go('login')">Back to Login</button>
+      </div>
+    </section>
+
+    <!-- ============ 4. TWO-PATH ONBOARDING ============ -->
+    <section class="screen" id="choose">
+      <div class="appbar"></div>
+      <div class="scroll">
+        <h1 class="t">How would you like to get started?</h1>
+        <p class="sub">Choose the path that's right for you.</p>
+        <div class="optcard" onclick="setJourney('micro','journey')">
+          <div class="ic">🌱</div>
+          <div><h3>Micro-invest only</h3><p>Invest any amount from $5 and grow your wealth.</p></div>
+          <div class="chev">›</div>
+        </div>
+        <div class="optcard" onclick="setJourney('plan','gp-number')">
+          <div class="ic">📱</div>
+          <div><h3>Get a plan</h3><p>Get a mobile or internet plan that automatically invests for you.</p></div>
+          <div class="chev">›</div>
+        </div>
+        <div class="apinote">POST /onboarding/journey-type {journey_type} → next step</div>
+      </div>
+    </section>
+
+    <!-- ============ SET UP · 2 AMOUNT + MONTHLY DEBIT (merged) ============ -->
+    <section class="screen" id="mi-amount">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Set up your investment</div></div>
+      <div class="scroll">
+        <div class="setupprog"><div class="lbl">Choose Investment · Step 2 of 5</div><div class="bar"><i style="width:40%"></i></div></div>
+        <h1 class="t center">How much would you like to invest?</h1>
+        <p class="sub center">Start small. Grow big.</p>
+        <div style="margin:14px 0 6px"><div class="amount" id="mi-amt-display">$100.00<small>per month</small></div></div>
+        <div class="chips">
+          <button class="chip" onclick="miChip(25)">$25</button>
+          <button class="chip on" onclick="miChip(100)">$100</button>
+          <button class="chip" onclick="miChip(250)">$250</button>
+          <button class="chip" onclick="miChip(500)">$500</button>
+        </div>
+        <input class="rng" id="mi-rng" type="range" min="10" max="2000" value="100" oninput="miAmt(this.value)">
+        <div class="rngends"><span>$10</span><span>$2,000</span></div>
+        <div class="card" style="margin-top:16px"><div class="row" style="border:none;padding:6px 0"><span class="k">Illustrative value in 20 years</span><span class="v" id="mi-grow">$58,900</span></div></div>
+        <div class="disc">Illustration only — not a projection, forecast or guarantee. Assumes 8% p.a. for demonstration. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+        <div class="sectitle">Your monthly direct debit</div>
+        <div class="card">
+          <div class="row"><span class="k">Your investment</span><span class="v" id="mi-dd-amt">$100.00</span></div>
+          <div class="row"><span class="k">Est. investment date</span><span class="v">Every 4 weeks</span></div>
+          <div class="row"><span class="k">Direct debit</span><span class="v">Monthly</span></div>
+          <div class="row"><span class="k">Fees</span><span class="v">Nil</span></div>
+        </div>
+        <p class="note center" style="margin-top:12px">Nice — small amounts add up. You can change this any time from your dashboard.</p>
+      </div>
+      <div style="padding:12px 26px 26px"><button class="cta green" onclick="go('mi-verify')">Continue</button></div>
+    </section>
+
+    <!-- ============ SET UP · 1 ETF SELECTION (shown right after Create an Investor) ============ -->
+    <section class="screen" id="mi-etf">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Set up your investment</div></div>
+      <div class="scroll">
+        <div class="setupprog"><div class="lbl">Choose Investment · Step 1 of 5</div><div class="bar"><i style="width:20%"></i></div></div>
+        <h1 class="t">Choose your ETFs</h1>
+        <p class="sub">Select the funds you'd like your money invested in.</p>
+        <div class="optcard sel" onclick="multi(this)"><div class="ic">🇦🇺</div><div><h3>ASX 200</h3><p>Australian shares</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;margin-left:auto;align-self:center">✓</div></div>
+        <div class="optcard" onclick="multi(this)"><div class="ic">🌍</div><div><h3>Global Equities</h3><p>World index fund</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--line);margin-left:auto;align-self:center"></div></div>
+        <div class="optcard" onclick="multi(this)"><div class="ic">🏅</div><div><h3>Gold</h3><p>Safe haven — store of value</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--line);margin-left:auto;align-self:center"></div></div>
+        <div class="optcard" onclick="multi(this)"><div class="ic">🏠</div><div><h3>Property REIT</h3><p>Australian real estate</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--line);margin-left:auto;align-self:center"></div></div>
+        <div class="disc">All options are from the Cache Multi-Class Investment Fund (ARSN 671 024 061). Annual fees apply (p.a.). These returns are not a projection. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns. Read the PDS and TMD before acquiring.</div>
+      </div>
+      <div style="padding:10px 26px 26px"><button class="cta green" onclick="go('mi-amount')">Continue</button></div>
+    </section>
+
+    <!-- ============ 10. VERIFY PHONE (enter number → 2FA OTP) ============ -->
+    <section class="screen" id="mi-verify">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Security check</div></div>
+      <div class="scroll">
+        <div class="setupprog"><div class="lbl">Choose Investment · Step 3 of 5</div><div class="bar"><i style="width:60%"></i></div></div>
+        <div class="vp-enter">
+          <h1 class="t center">Verify your phone</h1>
+          <p class="sub center">Enter your mobile number and we'll text you a 6-digit code.</p>
+          <div class="field"><label>Mobile number</label><input inputmode="tel" placeholder="+61 4XX XXX XXX" value="+61 412 345 678"></div>
+          <div class="banner" style="margin-top:16px">2-factor authentication is required before you set up a direct debit (CIP requirement).</div>
+          <div class="apinote">POST /phone/request-otp {mobile}</div>
+        </div>
+        <div class="vp-otp" style="display:none">
+          <div class="rule"></div>
+          <p class="sub center" style="margin-top:14px">Enter the 6-digit code we sent to your mobile ending ••• 678.</p>
+          <div class="otp"><b class="f">1</b><b>2</b><b>3</b><b>4</b><b></b><b></b></div>
+          <p class="sub center" style="font-size:13px">Resend code in <b>42s</b></p>
+          <p class="sub center" style="font-size:12px;margin-top:4px"><a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('Code sent to your email instead.')">Send code to email instead</a> · <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('A new code has been sent.')">Code expired?</a></p>
+          <div class="apinote">POST /phone/verify {code}</div>
+        </div>
+      </div>
+      <div style="padding:12px 26px 26px">
+        <button class="cta gold vp-send" onclick="vpSend('mi-verify')">Send code</button>
+        <button class="cta green vp-verify" style="display:none" onclick="go('mi-ddr')">Verify</button>
+      </div>
+    </section>
+
+    <!-- ============ 11. DIRECT DEBIT + BANK (merged) ============ -->
+    <section class="screen" id="mi-ddr">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Direct debit &amp; bank</div></div>
+      <div class="scroll">
+        <div class="setupprog"><div class="lbl">Choose Investment · Step 4 of 5</div><div class="bar"><i style="width:80%"></i></div></div>
+        <h1 class="t">Direct debit &amp; bank</h1>
+        <p class="sub">Authorise the monthly debit and enter the account it comes from.</p>
+        <div class="disc" style="max-height:130px;overflow:auto">
+          You request and authorise <b>Split Payments Pty Ltd (Zepto)</b> to debit your nominated account through the Bulk Electronic Clearing System (BECS), subject to the Direct Debit Request Service Agreement. Please make sure you have enough money in your connected account. If you don't, you may be charged a late settlement fee of $9.90.
+          <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="openDDR()"> View full DDR &amp; Service Agreement ›</a>
+        </div>
+        <div class="disclabel">Nominated account</div>
+        <div class="field"><label>BSB</label><input inputmode="numeric" placeholder="000-000" value="062-000"></div>
+        <div class="field"><label>Account name</label><input placeholder="Your name" value="John Smith"></div>
+        <div class="field"><label>Account number</label><input inputmode="numeric" placeholder="00000000" value="12345678"></div>
+        <div class="check" id="mi-ddr-ack" style="margin-top:14px" onclick="tog(this);gateBtn('mi-ddr-ack','mi-ddr-continue')"><div class="bx"></div><span>I confirm I have read, understand and accept the <a onclick="openDDR()">Direct Debit Request</a> and <a onclick="openDDR()">DDR Service Agreement</a>.</span></div>
+        <div class="apinote">POST /direct-debit/authorise + POST /banking {bsb, account_name, account_number, ddr_mandate_version}</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" id="mi-ddr-continue" disabled onclick="go('mi-review')">Authorise &amp; continue</button></div>
+    </section>
+
+    <!-- ============ 13. REVIEW & CONFIRM ============ -->
+    <section class="screen" id="mi-review">
+      <div class="appbar"><div class="back" onclick="back()">‹</div></div>
+      <div class="scroll">
+        <div class="setupprog"><div class="lbl">Choose Investment · Step 5 of 5</div><div class="bar"><i style="width:100%"></i></div></div>
+        <div class="eyebrow">The Supper</div>
+        <h1 class="t">See it in action</h1>
+        <p class="sub">Even small amounts add up over time — here's your setup below.</p>
+        <div class="growth">
+          <span class="illus-tag">ILLUSTRATION</span>
+          <svg viewBox="0 0 320 236" width="100%" height="100%" preserveAspectRatio="none" style="position:absolute;inset:0">
+            <defs><linearGradient id="gfill2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#D4AF37" stop-opacity=".22"/><stop offset="1" stop-color="#D4AF37" stop-opacity="0"/></linearGradient></defs>
+            <line x1="20" y1="196" x2="300" y2="196" stroke="#D8CFB6" stroke-width="1" stroke-dasharray="3 5"/>
+            <path d="M22,198 C120,196 180,150 232,96 C264,64 286,44 300,30 L300,200 L22,200 Z" fill="url(#gfill2)"/>
+            <path d="M22,198 C120,196 180,150 232,96 C264,64 286,44 300,30" fill="none" stroke="#C8A646" stroke-width="2.6" stroke-linecap="round"/>
+            <circle cx="300" cy="30" r="4" fill="#D4AF37"/><circle cx="300" cy="30" r="8" fill="none" stroke="#D4AF37" stroke-opacity=".4" stroke-width="2"/>
+          </svg>
+          <div class="gchip" style="left:24px;bottom:18px"><span class="gl">After yr 1</span><span class="gv">$46.80</span></div>
+          <div class="gchip" style="left:120px;top:96px"><span class="gl">After yr 10</span><span class="gv">$612</span></div>
+          <div class="gchip" style="right:14px;top:30px"><span class="gl">After yr 20</span><span class="gv">$1,920</span></div>
+        </div>
+        <div class="disc">This is an illustration only — not a projection, forecast or guarantee. Figures assume an 8% p.a. return purely for demonstration. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+        <div class="sectitle">Review your setup</div>
+        <p class="sub" style="margin-top:0">Please confirm your investment details.</p>
+        <div class="card" style="margin-top:8px">
+          <div class="row"><span class="k">Monthly investment</span><span class="v">$100.00</span></div>
+          <div class="row"><span class="k">Investment frequency</span><span class="v">Monthly</span></div>
+          <div class="row"><span class="k">ETFs</span><span class="v">ASX 200</span></div>
+          <div class="row"><span class="k">Fund</span><span class="v">Cache Multi-Class (ARSN 671 024 061)</span></div>
+          <div class="row"><span class="k">Direct debit</span><span class="v">Monthly</span></div>
+          <div class="row"><span class="k">Fees (incl GST)</span><span class="v">Nil</span></div>
+          <div class="row"><span class="k">Total amount (gross of fees)</span><span class="v">$100.00</span></div>
+          <div class="row"><span class="k">Est. start date</span><span class="v">24 May 2024</span></div>
+        </div>
+        <div class="disc">Returns are not a projection and past performance is not a reliable indicator of future returns. You must confirm this instruction before any money is moved. A 14-day cooling-off period applies from your first investment — you can cancel and have your money returned within that time.</div>
+        <div class="disclabel">2-factor authentication</div>
+        <div class="note" id="mi-2fa-note">Tap “Send code” and we'll text a 6-digit code to your mobile ending ••• 678.</div>
+        <div id="mi-2fa-otp" style="display:none">
+          <div class="otp"><b class="f">1</b><b>2</b><b>3</b><b>4</b><b></b><b></b></div>
+          <p class="sub center" style="font-size:12px"><a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('A new code has been sent.')">Resend</a> · <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('Code sent to your email instead.')">Send to email</a></p>
+          <p class="note center" id="mi-2fa-ok" style="display:none;color:var(--ok);font-weight:700">✓ Verified</p>
+        </div>
+        <button class="cta outline" id="mi-2fa-send" onclick="reviewSend('mi')">Send code</button>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta gold" id="mi-confirm" disabled onclick="showToast('You\'re in — your first investment of $100.00 is scheduled for 24 May 2024.');go('home')">Confirm &amp; start investing</button></div>
+    </section>
+
+
+    <!-- ============ 15. HOME (DASHBOARD) ============ -->
+    <section class="screen" id="home">
+      <div class="scroll nomargintop" style="padding-top:14px">
+        <div class="badgehead"><div><div class="meta">Good morning,</div><div class="greet">John</div></div><div class="bell">🔔</div></div>
+        <div class="banner" style="margin-top:12px;background:#FBEAEA;border-color:#F0C2C2;color:#8a1f1f;cursor:pointer" onclick="go('payment-failed')">⚠ Your last direct debit didn't go through. Tap to fix.</div>
+        <div class="card" style="margin-top:14px">
+          <div class="meta">Total invested</div>
+          <div class="stat">$2,652.75</div>
+          <div class="up">▲ $325.45 (13.96%) <span style="color:var(--muted);font-weight:400">All time return (to 29 Jun 2026)</span></div>
+          <div class="chart"><svg viewBox="0 0 300 120" preserveAspectRatio="none" width="100%" height="120"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A4D2E" stop-opacity=".25"/><stop offset="1" stop-color="#1A4D2E" stop-opacity="0"/></linearGradient></defs><path d="M0,95 C40,90 60,70 90,72 C130,75 150,40 190,38 C230,36 250,18 300,10 L300,120 L0,120 Z" fill="url(#g)"/><path d="M0,95 C40,90 60,70 90,72 C130,75 150,40 190,38 C230,36 250,18 300,10" fill="none" stroke="#1A4D2E" stroke-width="2.5"/></svg></div>
+          <div class="segt"><b>1D</b><b>1W</b><b>1M</b><b>3M</b><b class="on">1Y</b><b>ALL</b></div>
+        </div>
+        <div class="sectitle">Investing from your bills</div>
+        <div class="listcard">
+          <div class="li" onclick="go('bills')"><div class="ic">📱</div><div style="flex:1"><h4>Mobile Plan</h4><p>$4.90 invested</p></div><span class="pill green">Active</span></div>
+          <div class="li" onclick="go('bills')"><div class="ic">🌐</div><div style="flex:1"><h4>Internet Plan</h4><p>$6.30 invested</p></div><span class="pill green">Active</span></div>
+        </div>
+        <div class="disc">These returns are not a projection. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</div>
+        <div class="tab" onclick="go('invest')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>Invest</div>
+        <div class="tab" onclick="go('bills')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</div>
+        <div class="tab" onclick="go('learn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 17H6"/></svg>Learn</div>
+        <div class="tab" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>Profile</div>
+      </div>
+    </section>
+
+    <!-- ============ 16. INVEST ============ -->
+    <section class="screen" id="invest">
+      <div class="scroll nomargintop" style="padding-top:18px">
+        <h1 class="t">Invest</h1>
+        <div class="card" style="margin-top:14px">
+          <div class="meta">Growth (Diversified)</div>
+          <div class="stat" style="font-size:30px">$2,652.75</div>
+          <div class="up">▲ 13.96% all time (to 29 Jun 2026)</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="cta green" style="margin:0;height:48px;font-size:14px" onclick="go('invest-add-amount')">Add money</button>
+          <button class="cta outline" style="margin:0;height:48px;font-size:14px" onclick="go('invest-withdraw-amount')">Withdraw</button>
+          <button class="cta outline" style="margin:0;height:48px;font-size:14px" onclick="go('invest-switch-select')">Switch</button>
+        </div>
+        <div class="banner" style="margin-top:16px">Every instruction to invest, withdraw or switch requires 2-factor authentication and an in-app confirmation showing date, option, amount and fees (CIP).</div>
+        <div class="sectitle">Your options</div>
+        <div class="listcard">
+          <div class="li" onclick="go('mi-etf')"><div class="ic">🇦🇺</div><div style="flex:1"><h4>Your ETFs</h4><p>ASX 200 · low risk</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('mi-etf')"><div class="ic">➕</div><div style="flex:1"><h4>Manage your ETFs</h4><p>Add or change funds</p></div><span class="chev">›</span></div>
+        </div>
+        <div class="disc">These returns are not a projection. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</div>
+        <div class="tab on" onclick="go('invest')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>Invest</div>
+        <div class="tab" onclick="go('bills')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</div>
+        <div class="tab" onclick="go('learn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 17H6"/></svg>Learn</div>
+        <div class="tab" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>Profile</div>
+      </div>
+    </section>
+
+    <!-- ============ 17. BILLS ============ -->
+    <section class="screen" id="bills">
+      <div class="scroll nomargintop" style="padding-top:18px">
+        <h1 class="t">Bills building wealth</h1>
+        <div class="card" style="margin-top:14px">
+          <div class="meta">You've invested</div>
+          <div class="stat">$187.20</div>
+          <div class="meta">from your bills</div>
+          <div class="up" style="margin-top:8px">This month (Jun 2026) ▲ $12.40</div>
+        </div>
+        <div class="hero cream" style="height:120px"><svg width="120" height="78" viewBox="0 0 200 120" class="platemotif"><ellipse cx="100" cy="60" rx="54" ry="46" fill="none" stroke="#B8932B" stroke-width="2"/><g stroke="#B8932B" stroke-width="3" stroke-linecap="round"><line x1="40" y1="22" x2="40" y2="98"/><line x1="166" y1="22" x2="166" y2="98"/></g></svg></div>
+        <div class="card">
+          <div class="row"><span class="k">All time from bills (to 29 Jun 2026)</span><span class="v">$2,282.75</span></div>
+          <div class="li" style="padding:14px 0;border:none;margin-top:4px" onclick="go('home')"><div style="flex:1"><h4>See your bill-linked investing</h4></div><span class="chev">›</span></div>
+        </div>
+        <div class="disc">Amounts shown are historic. These returns are not a projection. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</div>
+        <div class="tab" onclick="go('invest')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>Invest</div>
+        <div class="tab on" onclick="go('bills')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</div>
+        <div class="tab" onclick="go('learn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 17H6"/></svg>Learn</div>
+        <div class="tab" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>Profile</div>
+      </div>
+    </section>
+
+    <!-- ============ 18. LEARN ============ -->
+    <section class="screen" id="learn">
+      <div class="scroll nomargintop" style="padding-top:18px">
+        <h1 class="t">Learn</h1>
+        <p class="sub">Understand how your money works.</p>
+        <div class="listcard" style="margin-top:14px">
+          <div class="li"><div class="ic">📖</div><div style="flex:1"><h4>What is micro-investing?</h4><p>3 min read</p></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">⚖️</div><div style="flex:1"><h4>Understanding risk profiles</h4><p>4 min read</p></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">🌍</div><div style="flex:1"><h4>Diversification explained</h4><p>5 min read</p></div><span class="chev">›</span></div>
+        </div>
+        <div class="sectitle">Important documents</div>
+        <div class="listcard">
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Product Disclosure Statement</h4></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Financial Services Guide</h4></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Target Market Determination</h4></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">🔒</div><div style="flex:1"><h4>Privacy Policy</h4></div><span class="chev">›</span></div>
+        </div>
+        <div class="disc">These returns are not a projection. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</div>
+        <div class="tab" onclick="go('invest')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>Invest</div>
+        <div class="tab" onclick="go('bills')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</div>
+        <div class="tab on" onclick="go('learn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 17H6"/></svg>Learn</div>
+        <div class="tab" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>Profile</div>
+      </div>
+    </section>
+
+    <!-- ============ 19. PROFILE ============ -->
+    <section class="screen" id="profile">
+      <div class="scroll nomargintop" style="padding-top:18px">
+        <h1 class="t">Profile</h1>
+        <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:14px">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--green);color:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:22px;font-weight:bold">JS</div>
+          <div><h4 style="margin:0;font-size:17px">John Smith</h4><div class="meta">john.smith@email.com</div></div>
+        </div>
+        <div class="listcard" style="margin-top:14px">
+          <div class="li"><div class="ic">👤</div><div style="flex:1"><h4>Personal details</h4></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('mi-verify')"><div class="ic">🔒</div><div style="flex:1"><h4>Security &amp; 2FA</h4></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('journey')"><div class="ic">🧭</div><div style="flex:1"><h4>Your Journey</h4><p>Resume onboarding</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('manage')"><div class="ic">⚙️</div><div style="flex:1"><h4>Manage investment &amp; direct debit</h4><p>Change, pause or cancel</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('plan-manage')"><div class="ic">📶</div><div style="flex:1"><h4>Manage your plan</h4><p>Change or cancel your plan</p></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Documents (PDS, FSG, TMD)</h4></div><span class="chev">›</span></div>
+          <div class="li"><div class="ic">🧾</div><div style="flex:1"><h4>Tax details</h4></div><span class="chev">›</span></div>
+        </div>
+        <div class="legaldim" style="margin-top:18px">This app is operated by The Supper Pty Ltd (ACN 671 234 567, AR 1290456) who is an authorised representative of <b>Cache Investment Management Ltd (ACN 624 306 430 AFSL 514 360)</b>.</div>
+        <button class="cta outline" onclick="go('login')">Log out</button>
+        <span class="demo" onclick="go('session-expired')">▸ Demo: session timeout</span>
+      </div>
+      <div class="tabbar">
+        <div class="tab" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</div>
+        <div class="tab" onclick="go('invest')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>Invest</div>
+        <div class="tab" onclick="go('bills')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</div>
+        <div class="tab" onclick="go('learn')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 17H6"/></svg>Learn</div>
+        <div class="tab on" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>Profile</div>
+      </div>
+    </section>
+
+    <!-- ============ YOUR JOURNEY HUB ============ -->
+    <section class="screen" id="journey">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">View your setup</div></div>
+      <div class="scroll">
+        <h1 class="t">Your Journey</h1>
+        <p class="sub" id="jr-sub">Pick up right where you left off. Everything you need to start investing.</p>
+        <div class="progwrap">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px"><span><b style="color:var(--ink)" id="jr-step">Step 9 of 13</b></span><span id="jr-pct">62% complete</span></div>
+          <div class="progbar"><i id="jr-bar" style="width:62%"></i></div>
+        </div>
+        <div id="jr-groups"></div>
+        <div class="jr-allset" id="jr-allset" style="display:none">🎉 All steps complete — you're ready to invest.</div>
+      </div>
+      <div style="padding:10px 26px 24px"><button class="cta gold" id="journey-continue" onclick="go('cmp-docs')">Continue</button></div>
+    </section>
+
+    <!-- ============ COMPLIANCE 1/3 — DOCUMENTS ============ -->
+    <section class="screen" id="cmp-docs">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Compliance · 1 of 3</div></div>
+      <div class="scroll">
+        <h1 class="t">Documents &amp; disclosures</h1>
+        <p class="sub">Please review and agree to the following before continuing.</p>
+        <div class="listcard" style="margin-top:14px">
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Product Disclosure Statement</h4></div><a style="color:var(--green2);font-size:13px;font-weight:600;cursor:pointer" onclick="showToast('Opening document — PDS / FSG / T&Cs / Privacy.')">View ›</a></div>
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Financial Services Guide</h4></div><a style="color:var(--green2);font-size:13px;font-weight:600;cursor:pointer" onclick="showToast('Opening document — PDS / FSG / T&Cs / Privacy.')">View ›</a></div>
+          <div class="li"><div class="ic">📄</div><div style="flex:1"><h4>Mobile App Terms &amp; Conditions</h4></div><a style="color:var(--green2);font-size:13px;font-weight:600;cursor:pointer" onclick="showToast('Opening document — PDS / FSG / T&Cs / Privacy.')">View ›</a></div>
+          <div class="li"><div class="ic">🔒</div><div style="flex:1"><h4>Privacy Policy</h4></div><a style="color:var(--green2);font-size:13px;font-weight:600;cursor:pointer" onclick="showToast('Opening document — PDS / FSG / T&Cs / Privacy.')">View ›</a></div>
+        </div>
+        <div class="disc">The Cache Multi-Class Investment Fund (ARSN 671 024 061) is issued by Cache Investment Management Ltd (ACN 624 306 430, AFSL 514 360), as disclosed in the relevant PDS. You should also read the TMD. All information is general only and does not consider your personal circumstances, financial situation or needs. Before making a financial decision you should read the PDS and consider whether the product is right for you and whether to obtain advice from a professional financial adviser. All investments carry risk.</div>
+        <div class="check" id="docs-ack" onclick="tog(this);gateBtn('docs-ack','docs-continue')"><div class="bx"></div><span>I have read and agree to the <a>PDS</a>, <a>FSG</a> and <a>Terms &amp; Conditions</a>, and have accessed the <a>Privacy Policy</a>.</span></div>
+      </div>
+      <div style="padding:6px 26px 26px"><button class="cta green" id="docs-continue" disabled onclick="go('cmp-suit')">Continue</button></div>
+    </section>
+
+    <!-- ============ COMPLIANCE 2/3 — SUITABILITY + TMD ============ -->
+    <section class="screen" id="cmp-suit">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Compliance · 2 of 3</div></div>
+      <div class="scroll">
+        <h1 class="t">A few quick questions</h1>
+        <p class="sub">This helps confirm the investment options are right for you.</p>
+        <div id="ko-first">
+          <div class="card" data-q="f1" style="margin-top:14px"><p style="margin:0 0 8px;font-weight:600;font-size:14px">Are you looking for capital growth?</p>
+            <div class="seg"><button class="yn" onclick="ko(this)">Yes</button><button class="yn" onclick="ko(this)">No</button></div></div>
+          <div class="card" data-q="f2"><p style="margin:0 0 8px;font-weight:600;font-size:14px">Do you have a long investment timeframe?</p>
+            <div class="seg"><button class="yn" onclick="ko(this)">Yes</button><button class="yn" onclick="ko(this)">No</button></div></div>
+          <div class="card" data-q="f3"><p style="margin:0 0 8px;font-weight:600;font-size:14px">Are you willing to risk capital loss?</p>
+            <div class="seg"><button class="yn" onclick="ko(this)">Yes</button><button class="yn" onclick="ko(this)">No</button></div></div>
+        </div>
+        <div id="ko-second" style="display:none">
+          <div class="banner" style="margin-top:14px">Because you answered "No" above, you can only proceed if an appropriate capital-preserving option suits you. We offer a <b>Cash option</b> — the questions below check whether it's right for you.</div>
+          <div class="card" data-q="s1"><p style="margin:0 0 8px;font-weight:600;font-size:14px">Are you looking to preserve capital?</p>
+            <div class="seg"><button class="yn" onclick="ko(this)">Yes</button><button class="yn" onclick="ko(this)">No</button></div></div>
+          <div class="card" data-q="s2"><p style="margin:0 0 8px;font-weight:600;font-size:14px">Is your investment timeframe not tied to a minimum period?</p>
+            <div class="seg"><button class="yn" onclick="ko(this)">Yes</button><button class="yn" onclick="ko(this)">No</button></div></div>
+          <div class="card" data-q="s3"><p style="margin:0 0 8px;font-weight:600;font-size:14px">Are you not willing to risk capital loss?</p>
+            <div class="seg"><button class="yn" onclick="ko(this)">Yes</button><button class="yn" onclick="ko(this)">No</button></div></div>
+        </div>
+        <div class="infobox">
+          <p style="margin:0 0 10px">• Before making an application to invest please take note that the Fund may have other investment options; and</p>
+          <p style="margin:0">• Please ensure that before acquiring an investment option in the Fund you read the <a style="color:var(--green2);text-decoration:underline">TMD</a> to ensure the investment option you intend to acquire aligns with the specific attributes that you are looking for in any investment option.</p>
+        </div>
+        <div class="disclabel">Please confirm that you</div>
+        <div class="check" id="suit-tmd-chk" onclick="tog(this)"><div class="bx"></div><span>I confirm I have received and read the <a>TMD</a>, that I understand it, and that to the best of my understanding I am in the target market for the investment options I intend to acquire.</span></div>
+        <p id="suit-msg" class="note" style="color:var(--err);display:none;margin-top:8px"></p>
+      </div>
+      <div style="padding:6px 26px 26px"><button class="cta green" onclick="suitContinue()">Continue</button></div>
+    </section>
+
+    <!-- ============ COMPLIANCE 3/3 — IDENTITY + TAX ============ -->
+    <section class="screen" id="cmp-id">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Compliance · 3 of 3</div></div>
+      <div class="scroll">
+        <h1 class="t">Identity &amp; disclaimers</h1>
+        <p class="sub">Complete your details, then read and accept the disclaimers below to continue.</p>
+
+        <div class="disclabel">Your details</div>
+        <div class="infobox" style="margin-top:0">Fields below map to the Cache “Create an Investor” API. Final field names/format to be reconciled with the live API schema.</div>
+        <div class="field"><label>Title (optional)</label><input value="Mr"></div>
+        <div class="field"><label>Given name(s)</label><input value="John"></div>
+        <div class="field"><label>Middle name(s) (optional)</label><input value="Andrew"></div>
+        <div class="field"><label>Family name</label><input value="Smith"></div>
+        <div class="field"><label>Date of birth</label><input value="14 / 03 / 1991"></div>
+        <div class="field"><label>Country of birth</label><input value="Australia"></div>
+        <div class="field"><label>Email address</label><input value="john.smith@email.com" disabled></div>
+        <div class="disclabel" style="margin-top:14px">Residential address</div>
+        <div class="field"><label>Street address</label><input value="42 Wattle St"></div>
+        <div class="field"><label>Suburb / town</label><input value="Sydney"></div>
+        <div class="field"><label>State</label><input value="NSW"></div>
+        <div class="field"><label>Postcode</label><input value="2000"></div>
+        <div class="field"><label>Country</label><input value="Australia"></div>
+        <div class="card" style="margin-top:18px">
+          <p style="margin:0 0 8px;font-weight:600;font-size:14px">Besides Australia, are you a tax resident of any other country?</p>
+          <div class="seg"><button class="yn" onclick="ynPick(this);taxRes(true)">Yes</button><button class="yn on" onclick="ynPick(this);taxRes(false)">No</button></div>
+          <div id="tfnbox" class="field"><label>Tax File Number (optional)</label><input placeholder="Optional" value=""><p class="note" style="margin-top:6px">Not providing your TFN may have tax implications.</p></div>
+          <div id="foreignbox" style="display:none">
+            <div class="field"><label>Country of tax residency</label><input placeholder="e.g. United States"></div>
+            <div class="field"><label>Tax Identification Number (TIN)</label><input placeholder="Foreign TIN"></div>
+            <div id="foreign-extra"></div>
+            <a class="demo" style="text-align:left;display:inline-block;margin-top:8px" onclick="addCountry()">+ Add another country</a>
+            <p class="note" style="margin-top:6px">Enter the Tax Identification Number (TIN) for each country of tax residency (Create Investor API).</p>
+          </div>
+        </div>
+
+        <div class="rule"></div>
+        <div class="disclabel">Disclaimers &amp; consent</div>
+        <div class="acc"><div class="acchead" onclick="this.parentNode.classList.toggle('open')"><span>Important information (general advice)</span><span class="caret">›</span></div>
+          <div class="accbody"><div class="disc" style="margin-top:0">The Cache Multi-Class Investment Fund (ARSN 671 024 061) is issued by Cache Investment Management Ltd (ACN 624 306 430, AFSL 514 360), as disclosed in the relevant PDS. You should also read the TMD, which describes who the financial products mentioned herein may be appropriate for. All information is general information only and does not consider your personal circumstances, financial situation or needs. Before making a financial decision, you should read the PDS and consider whether the product is right for you and whether you should obtain advice from a professional financial adviser. All investments carry risk.</div></div>
+        </div>
+        <div class="acc"><div class="acchead" onclick="this.parentNode.classList.toggle('open')"><span>Identity verification (KYC)</span><span class="caret">›</span></div>
+          <div class="accbody"><div class="disc" style="margin-top:0">Your personal information will be checked against third-party records, including a credit reporting agency and the Australian Government's Document Verification Service (DVS), to assess whether your personal information matches those records and to assist verify your identity for the purposes of the Anti-Money Laundering and Counter-Terrorism Financing Act 2006. If you disagree with having your personal information shared with third parties or your identity verified, we may not be able to open an account for you.</div></div>
+        </div>
+        <div class="check" id="id-ack" onclick="tog(this);idGate()"><div class="bx"></div><span>I have read and accept the <b>Important information (general advice)</b> and <b>Identity verification (KYC)</b> disclaimers, confirm I'm authorised to provide these details, and consent to my identity being verified against third-party records.</span></div>
+        <p id="id-msg" class="note" style="color:var(--muted);margin-top:10px">Please accept the disclaimers to continue.</p>
+        <span class="demo" onclick="go('kyc-failed')">▸ Demo: identity verification failed</span>
+        <span class="demo" onclick="go('kyc-pending')">▸ Demo: identity under review (pending)</span>
+      </div>
+      <div style="padding:6px 26px 26px"><button class="cta green" id="id-continue" disabled onclick="go(typeof cmpReturn!=='undefined'&&cmpReturn?cmpReturn:'home')">Continue</button></div>
+    </section>
+
+    <!-- ============ GET A PLAN · NUMBER SELECTION ============ -->
+    <section class="screen" id="gp-number">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Number Selection</div></div>
+      <div class="scroll">
+        <div class="eyebrow">The Supper</div>
+        <h1 class="t">Choose Your Number</h1>
+        <p class="sub">New number or keep your existing one?</p>
+        <div class="rule"></div>
+        <div class="optcard" onclick="simPath='new';go('journey')">
+          <div style="flex:1"><h3>New Number</h3><p>Brand new 04xx number, assigned instantly.</p>
+            <div class="goldticks">✓ Instant&nbsp;&nbsp;&nbsp;✓ No wait</div></div>
+          <div class="chev">›</div>
+        </div>
+        <div class="optcard" onclick="simPath='port';go('gp-port')">
+          <div style="flex:1"><h3>Port My Existing Number</h3><p>Transfer your current number. Usually within 24 hours.</p></div>
+          <div class="chev">›</div>
+        </div>
+        <div class="apinote">New → POST /sim/reserve-number · Port → POST /sim/port-request</div>
+      </div>
+    </section>
+
+    <!-- ============ GET A PLAN · PORT IN ============ -->
+    <section class="screen" id="gp-port">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Port In</div></div>
+      <div class="scroll">
+        <div class="eyebrow">The Supper</div>
+        <h1 class="t">Port Your Number</h1>
+        <p class="sub">Transfer to eSIM · ~24 hrs</p>
+        <div class="rule"></div>
+        <div class="field"><label>Mobile number to port</label><input value="0412 345 678"></div>
+        <div class="field"><label>Current carrier</label><input value="Telstra"></div>
+        <div class="field"><label>Account number</label><input placeholder="e.g. 123456789"></div>
+        <div class="infobox">Port usually completes in 24 hours. Your current service stays active until the port is complete.</div>
+        <div class="apinote">POST /sim/port-request {number, carrier, account_number} → next: compliance</div>
+      </div>
+      <div style="padding:10px 26px 26px"><button class="cta gold" onclick="simPath='port';go('gp-port-status')">Submit Port Request</button></div>
+    </section>
+
+    <!-- ============ GET A PLAN · SIM PLAN & ACTIVATION ============ -->
+    <section class="screen" id="gp-sim1">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">SIM plan &amp; activation</div></div>
+      <div class="scroll">
+        <h1 class="t">Choose your plan</h1>
+        <p class="sub">A portion of every plan automatically invests for you.</p>
+        <div class="optcard" onclick="pick(this)"><div class="ic">📶</div><div><h3>Essential · 20GB</h3><p>$25 / month · invests ~$4.90/mo</p></div><div class="radio"></div></div>
+        <div class="optcard sel" onclick="pick(this)"><div class="ic">🚀</div><div><h3>Unlimited · 100GB</h3><p>$45 / month · invests ~$9.00/mo</p></div><div class="radio"></div></div>
+        <div class="optcard" onclick="pick(this)"><div class="ic">🌐</div><div><h3>Home Internet · NBN 100</h3><p>$69 / month · invests ~$11.00/mo</p></div><div class="radio"></div></div>
+        <div class="disc">Investment amounts shown are estimates. These returns are not a projection. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div style="padding:10px 26px 26px"><button class="cta green" onclick="go('gp-sim2')">Continue</button></div>
+    </section>
+
+    <!-- ============ GET A PLAN · eSIM ACTIVATION ============ -->
+    <section class="screen" id="gp-sim2">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">eSIM Activation</div></div>
+      <div class="scroll">
+        <div class="eyebrow">The Supper</div>
+        <h1 class="t">Activate Your eSIM</h1>
+        <p class="sub">Follow steps to install</p>
+        <div class="rule"></div>
+        <div class="step"><span class="num">1</span><span>Settings → Mobile Data → Add eSIM</span></div>
+        <div class="step"><span class="num">2</span><span>Choose "Use QR Code"</span></div>
+        <div class="step"><span class="num">3</span><span>Enter activation code below</span></div>
+        <div class="codebox"><div class="meta" style="text-align:center">Activation Code</div><div class="code">LPA:1$…ABCDEF</div></div>
+        <div class="banner" id="esim-fail" style="display:none">🛑 We couldn't detect your eSIM. Make sure mobile data is on, then re-enter the activation code and try again.</div>
+        <span class="demo" onclick="document.getElementById('esim-fail').style.display='flex'">▸ Demo: eSIM activation failed</span>
+        <div class="apinote">eSIM profile ← GET /sim/{order}/provisioning</div>
+      </div>
+      <div style="padding:10px 26px 26px"><button class="cta gold" onclick="go('gp-etf')">My eSIM is Active — Continue</button></div>
+    </section>
+
+    <!-- ============ GET A PLAN · VERIFY PHONE (enter number → OTP) ============ -->
+    <section class="screen" id="gp-verify">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Security check</div></div>
+      <div class="scroll">
+        <div class="vp-enter">
+          <h1 class="t center">Verify your phone</h1>
+          <p class="sub center">Confirm your new number and we'll text you a 6-digit code.</p>
+          <div class="field"><label>Mobile number</label><input inputmode="tel" placeholder="+61 4XX XXX XXX" value="0412 345 678"></div>
+          <div class="apinote">POST /phone/request-otp {mobile}</div>
+        </div>
+        <div class="vp-otp" style="display:none">
+          <div class="rule"></div>
+          <p class="sub center" style="margin-top:14px">Enter the 6-digit code we sent to your new number.</p>
+          <div class="otp"><b class="f">9</b><b>1</b><b>2</b><b></b><b></b><b></b></div>
+          <p class="sub center" style="font-size:13px">Resend code in <b>55s</b></p>
+          <p class="sub center" style="font-size:12px;margin-top:4px"><a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('Code sent to your email instead.')">Send code to email instead</a> · <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('A new code has been sent.')">Code expired?</a></p>
+          <div class="apinote">POST /phone/verify {code}</div>
+        </div>
+      </div>
+      <div style="padding:12px 26px 26px">
+        <button class="cta gold vp-send" onclick="vpSend('gp-verify')">Send code</button>
+        <button class="cta green vp-verify" style="display:none" onclick="go('gp-ddr')">Verify</button>
+      </div>
+    </section>
+
+    <!-- ============ GET A PLAN · CHOOSE ETFs ============ -->
+    <section class="screen" id="gp-etf">
+      <div class="appbar"><div class="back" onclick="back()">‹</div></div>
+      <div class="scroll">
+        <h1 class="t">Choose your ETFs</h1>
+        <p class="sub">Select the funds you want invested each month.</p>
+        <div class="optcard sel" onclick="multi(this)"><div class="ic">🇦🇺</div><div><h3>ASX 200</h3><p>Australian shares — low risk</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;margin-left:auto;align-self:center">✓</div></div>
+        <div class="optcard" onclick="multi(this)"><div class="ic">🌍</div><div><h3>Global Equities</h3><p>World index fund</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--line);margin-left:auto;align-self:center"></div></div>
+        <div class="optcard" onclick="multi(this)"><div class="ic">🏅</div><div><h3>Gold</h3><p>Safe haven — store of value</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--line);margin-left:auto;align-self:center"></div></div>
+        <div class="optcard" onclick="multi(this)"><div class="ic">🏠</div><div><h3>Property REIT</h3><p>Australian real estate</p></div><div class="bx" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--line);margin-left:auto;align-self:center"></div></div>
+        <div class="disc">Annual fees apply (p.a.). Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div style="padding:10px 26px 26px"><button class="cta green" onclick="go('gp-amount')">Continue</button></div>
+    </section>
+
+    <!-- ============ GET A PLAN · DIRECT DEBIT + BANK (merged) ============ -->
+    <section class="screen" id="gp-ddr">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Direct debit &amp; bank</div></div>
+      <div class="scroll">
+        <h1 class="t">Direct debit &amp; bank</h1>
+        <p class="sub">Authorise the debit for your plan and investment, and enter your account.</p>
+        <div class="disc" style="max-height:130px;overflow:auto">You request and authorise <b>Split Payments Pty Ltd (Zepto)</b> to debit your nominated account through the Bulk Electronic Clearing System (BECS), subject to the Direct Debit Request Service Agreement. Please make sure you have enough money in your connected account. If you don't, you may be charged a late settlement fee of $9.90. <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="openDDR()">View full DDR &amp; Service Agreement ›</a></div>
+        <div class="disclabel">Nominated account</div>
+        <div class="field"><label>BSB</label><input inputmode="numeric" placeholder="000-000" value="062-000"></div>
+        <div class="field"><label>Account name</label><input value="John Smith"></div>
+        <div class="field"><label>Account number</label><input inputmode="numeric" value="12345678"></div>
+        <div class="check" id="gp-ddr-ack" style="margin-top:14px" onclick="tog(this);gateBtn('gp-ddr-ack','gp-ddr-continue')"><div class="bx"></div><span>I confirm I have read, understand and accept the <a onclick="openDDR()">Direct Debit Request</a> and <a onclick="openDDR()">DDR Service Agreement</a>.</span></div>
+        <div class="apinote">POST /direct-debit/authorise + POST /banking {bsb, account_name, account_number, ddr_mandate_version}</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" id="gp-ddr-continue" disabled onclick="go('gp-review')">Authorise &amp; continue</button></div>
+    </section>
+
+    <!-- ============ GET A PLAN · INVESTMENT AMOUNT ============ -->
+    <section class="screen" id="gp-amount">
+      <div class="appbar"><div class="back" onclick="back()">‹</div></div>
+      <div class="scroll">
+        <h1 class="t center">How much would you like to invest?</h1>
+        <p class="sub center">Optional — defaults to your plan amount. Change anytime.</p>
+        <div style="margin:18px 0 6px"><div class="amount" id="gp-amt-display">$50.00<small>per month</small></div></div>
+        <div class="chips">
+          <button class="chip" onclick="gpChip(25)">$25</button>
+          <button class="chip on" onclick="gpChip(50)">$50</button>
+          <button class="chip" onclick="gpChip(100)">$100</button>
+          <button class="chip" onclick="gpChip(250)">$250</button>
+        </div>
+        <input class="rng" id="gp-rng" type="range" min="10" max="2000" value="50" oninput="gpAmt(this.value)">
+        <div class="rngends"><span>$10</span><span>$2,000</span></div>
+        <div class="card" style="margin-top:18px"><div class="row" style="border:none;padding:6px 0"><span class="k">Illustrative value after 30 years</span><span class="v" id="gp-grow">$74,500</span></div></div>
+        <div class="disc">This is an illustration only — not a projection, forecast or guarantee. It assumes an 8% p.a. return purely for demonstration. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta gold" onclick="go('gp-verify')">Set amount &amp; continue</button>
+        <button class="cta ghost" onclick="go('gp-verify')">Skip for now</button>
+      </div>
+    </section>
+
+    <!-- ============ GET A PLAN · SEE IT IN ACTION + REVIEW (merged) ============ -->
+    <section class="screen" id="gp-review">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Review your setup</div></div>
+      <div class="scroll">
+        <div class="eyebrow">The Supper</div>
+        <h1 class="t">See it in action</h1>
+        <p class="sub">Even small amounts add up over time — here's your setup below.</p>
+        <div class="growth">
+          <span class="illus-tag">ILLUSTRATION</span>
+          <svg viewBox="0 0 320 236" width="100%" height="100%" preserveAspectRatio="none" style="position:absolute;inset:0">
+            <defs><linearGradient id="gfill3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#D4AF37" stop-opacity=".22"/><stop offset="1" stop-color="#D4AF37" stop-opacity="0"/></linearGradient></defs>
+            <line x1="20" y1="196" x2="300" y2="196" stroke="#D8CFB6" stroke-width="1" stroke-dasharray="3 5"/>
+            <path d="M22,198 C120,196 180,150 232,96 C264,64 286,44 300,30 L300,200 L22,200 Z" fill="url(#gfill3)"/>
+            <path d="M22,198 C120,196 180,150 232,96 C264,64 286,44 300,30" fill="none" stroke="#C8A646" stroke-width="2.6" stroke-linecap="round"/>
+            <circle cx="300" cy="30" r="4" fill="#D4AF37"/><circle cx="300" cy="30" r="8" fill="none" stroke="#D4AF37" stroke-opacity=".4" stroke-width="2"/>
+          </svg>
+          <div class="gchip" style="left:24px;bottom:18px"><span class="gl">After yr 1</span><span class="gv">$46.80</span></div>
+          <div class="gchip" style="left:120px;top:96px"><span class="gl">After yr 10</span><span class="gv">$612</span></div>
+          <div class="gchip" style="right:14px;top:30px"><span class="gl">After yr 20</span><span class="gv">$1,920</span></div>
+        </div>
+        <div class="disc">This is an illustration only — not a projection, forecast or guarantee. Figures assume an 8% p.a. return purely for demonstration. Actual returns may differ and can be positive or negative. Past performance is not a reliable indicator of future returns.</div>
+        <div class="sectitle">Review your setup</div>
+        <p class="sub" style="margin-top:0">Please confirm your plan and investment details.</p>
+        <div class="card" style="margin-top:8px">
+          <div class="row"><span class="k">Date</span><span class="v">29 Jun 2026</span></div>
+          <div class="row"><span class="k">Plan</span><span class="v">Unlimited · 100GB</span></div>
+          <div class="row"><span class="k">ETFs</span><span class="v">ASX 200</span></div>
+          <div class="row"><span class="k">Monthly investment</span><span class="v">$50.00</span></div>
+          <div class="row"><span class="k">Fund</span><span class="v">Cache Multi-Class (ARSN 671 024 061)</span></div>
+          <div class="row"><span class="k">Direct debit</span><span class="v">Monthly</span></div>
+          <div class="row"><span class="k">Fees (incl GST)</span><span class="v">Nil</span></div>
+          <div class="row"><span class="k">Total amount (gross of fees)</span><span class="v">$50.00</span></div>
+        </div>
+        <div class="disc">Returns are not a projection and past performance is not a reliable indicator of future returns. You must confirm this instruction before any money is moved. A 14-day cooling-off period applies from your first investment — you can cancel and have your money returned within that time.</div>
+        <div class="disclabel">2-factor authentication</div>
+        <div class="note" id="gp-2fa-note">Tap “Send code” and we'll text a 6-digit code to your mobile ending ••• 678.</div>
+        <div id="gp-2fa-otp" style="display:none">
+          <div class="otp"><b class="f">1</b><b>2</b><b>3</b><b>4</b><b></b><b></b></div>
+          <p class="sub center" style="font-size:12px"><a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('A new code has been sent.')">Resend</a> · <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('Code sent to your email instead.')">Send to email</a></p>
+          <p class="note center" id="gp-2fa-ok" style="display:none;color:var(--ok);font-weight:700">✓ Verified</p>
+        </div>
+        <button class="cta outline" id="gp-2fa-send" onclick="reviewSend('gp')">Send code</button>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta gold" id="gp-confirm" disabled onclick="showToast('You\'re all set — your plan is active and your first investment is scheduled for 24 May 2024.');go('home')">Confirm &amp; start investing</button></div>
+    </section>
+
+
+    <!-- ============ SUITABILITY — BLOCKED (2nd knock-out fail) ============ -->
+    <section class="screen" id="cmp-blocked">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Suitability</div></div>
+      <div class="scroll" style="text-align:center">
+        <div class="warnic" style="background:#FBF1DD;color:var(--gold2)">!</div>
+        <h1 class="t center" style="margin-top:16px">Investing isn't suitable right now</h1>
+        <p class="sub center">Based on your answers, these options aren't in your target market and no suitable capital‑preserving cash option is available — so you can't proceed.</p>
+        <div class="disc" style="text-align:left">Before making an application to invest, please note the Fund may have other investment options. Please ensure that before acquiring an investment option you read the TMD to confirm the option aligns with what you're looking for.</div>
+        <p class="note" style="text-align:left">You can revisit your answers or read the PDS and TMD before deciding.</p>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta outline" onclick="go('cmp-suit')">Review my answers</button>
+        <button class="cta ghost" onclick="go('learn')">Read the PDS &amp; TMD</button>
+      </div>
+    </section>
+
+    <!-- ============ KYC FAILED ============ -->
+    <section class="screen" id="kyc-failed">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Identity</div></div>
+      <div class="scroll">
+        <div class="warnic">!</div>
+        <h1 class="t center" style="margin-top:14px">We couldn't verify your identity</h1>
+        <p class="sub center">We were unable to verify your identity against various electronic sources.</p>
+        <p class="sub">Before we can complete your registration, please attach a copy of <b>two</b> of the following documents:</p>
+        <div class="listcard" style="margin-top:6px">
+          <div class="li"><div style="flex:1"><h4>Australian Driver's Licence</h4></div></div>
+          <div class="li"><div style="flex:1"><h4>Medicare Card</h4></div></div>
+          <div class="li"><div style="flex:1"><h4>Australian Passport</h4></div></div>
+          <div class="li"><div style="flex:1"><h4>Australian Visa</h4><p>incl. foreign passport no. &amp; country</p></div></div>
+          <div class="li"><div style="flex:1"><h4>Australian Citizenship Certificate</h4></div></div>
+          <div class="li"><div style="flex:1"><h4>Birth Certificate</h4></div></div>
+          <div class="li"><div style="flex:1"><h4>Change of Name Certificate</h4></div></div>
+          <div class="li"><div style="flex:1"><h4>Centrelink Card</h4></div></div>
+        </div>
+        <p class="note">If you don't have two of these, send what you do have showing your name and either your date of birth or residential address (e.g. another form of ID, utility bill or bank statement).</p>
+        <div class="apinote">kyc_status = VERIFICATION_FAILED → document upload</div>
+      </div>
+      <div style="padding:6px 26px 26px">
+        <button class="cta green" onclick="go('journey')">Upload documents</button>
+        <button class="cta outline" onclick="go('cmp-id')">Try again</button>
+      </div>
+    </section>
+
+    <!-- ============ TRANSACTION · SHARED 2FA ============ -->
+    <section class="screen" id="txn-2fa">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Security check</div></div>
+      <div class="scroll">
+        <div class="vp-enter">
+          <h1 class="t center">Verify it's you</h1>
+          <p class="sub center">We'll text a 6-digit code to your registered mobile ending ••• 678.</p>
+          <div class="field"><label>Registered mobile</label><input value="+61 4•• ••• 678" disabled></div>
+          <div class="banner" style="margin-top:16px">2-factor authentication is required to authorise this instruction — direct debit setup, invest, withdraw or switch (CIP).</div>
+          <div class="apinote">POST /phone/request-otp {mobile}</div>
+        </div>
+        <div class="vp-otp" style="display:none">
+          <div class="rule"></div>
+          <p class="sub center" style="margin-top:14px">Enter the 6-digit code we sent to your mobile.</p>
+          <div class="otp"><b class="f">1</b><b>2</b><b>3</b><b>4</b><b></b><b></b></div>
+          <p class="sub center" style="font-size:13px">Resend code in <b>42s</b></p>
+          <p class="sub center" style="font-size:12px;margin-top:4px"><a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('Code sent to your email instead.')">Send code to email instead</a> · <a style="color:var(--green2);text-decoration:underline;cursor:pointer" onclick="showToast('A new code has been sent.')">Code expired?</a></p>
+          <div class="apinote">POST /phone/verify {code} → confirmation page</div>
+        </div>
+      </div>
+      <div style="padding:12px 26px 26px">
+        <button class="cta gold vp-send" onclick="vpSend('txn-2fa')">Send code</button>
+        <button class="cta green vp-verify" style="display:none" onclick="txnVerify()">Verify &amp; continue</button>
+      </div>
+    </section>
+
+    <!-- ============ ADD MONEY · 1 amount ============ -->
+    <section class="screen" id="invest-add-amount">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Add money</div></div>
+      <div class="scroll">
+        <h1 class="t center">How much would you like to add?</h1>
+        <p class="sub center">A one-off investment into your option.</p>
+        <div style="margin:24px 0 8px"><div class="amount">$50.00<small>one-off</small></div></div>
+        <input class="rng" type="range" min="10" max="2000" value="50" oninput="this.style.background='linear-gradient(90deg,var(--gold) '+((this.value-10)/19.9)+'%,var(--line) '+((this.value-10)/19.9)+'%)'">
+        <div class="rngends"><span>$10</span><span>$2,000</span></div>
+        <div class="field"><label>Investment option</label><input value="Growth (Diversified)"></div>
+        <div class="apinote">capture amount + option → 2FA required (CIP)</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" onclick="txnConfirm='invest-add-confirm';go('txn-2fa')">Continue</button></div>
+    </section>
+
+    <!-- ============ ADD MONEY · 2 confirm ============ -->
+    <section class="screen" id="invest-add-confirm">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Confirm investment</div></div>
+      <div class="scroll">
+        <h1 class="t center">Confirm your investment</h1>
+        <p class="sub center">Please review before we submit your instruction.</p>
+        <div class="card" style="margin-top:16px">
+          <div class="row"><span class="k">Date</span><span class="v">29 Jun 2026</span></div>
+          <div class="row"><span class="k">Investment option</span><span class="v">Growth (Diversified)</span></div>
+          <div class="row"><span class="k">Investment amount</span><span class="v">$50.00</span></div>
+          <div class="row"><span class="k">Fees (incl GST)</span><span class="v">Nil</span></div>
+          <div class="row"><span class="k">Total amount (gross of fees)</span><span class="v">$50.00</span></div>
+        </div>
+        <div class="disc">No money moves until you press Confirm. Returns are not a projection; past performance is not a reliable indicator of future returns.</div>
+        <div class="apinote">POST /transactions/invest {amount, option} — only after in-app Confirm (CIP)</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta gold" onclick="showToast('Investment submitted — ref TS-INV-10293.');go('invest')">Confirm</button></div>
+    </section>
+
+    <!-- ============ WITHDRAW · 1 amount ============ -->
+    <section class="screen" id="invest-withdraw-amount">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Withdraw</div></div>
+      <div class="scroll">
+        <h1 class="t center">How much to withdraw?</h1>
+        <p class="sub center">Available in Growth (Diversified): $2,652.75</p>
+        <div style="margin:24px 0 8px"><div class="amount">$200.00<small>withdrawal</small></div></div>
+        <input class="rng" type="range" min="10" max="2652" value="200" oninput="this.style.background='linear-gradient(90deg,var(--gold) '+((this.value-10)/26.42)+'%,var(--line) '+((this.value-10)/26.42)+'%)'">
+        <div class="rngends"><span>$10</span><span>$2,652</span></div>
+        <div class="field"><label>From investment option</label><input value="Growth (Diversified)"></div>
+        <p class="note" style="color:var(--muted)">You can withdraw up to your available balance ($2,652.75). Proceeds are paid to your nominated account.</p>
+        <div class="apinote">validate ≤ available balance → 2FA required (CIP)</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" onclick="txnConfirm='invest-withdraw-confirm';go('txn-2fa')">Continue</button></div>
+    </section>
+
+    <!-- ============ WITHDRAW · 2 confirm ============ -->
+    <section class="screen" id="invest-withdraw-confirm">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Confirm withdrawal</div></div>
+      <div class="scroll">
+        <h1 class="t center">Confirm your withdrawal</h1>
+        <p class="sub center">Please review before we submit your instruction.</p>
+        <div class="card" style="margin-top:16px">
+          <div class="row"><span class="k">Date</span><span class="v">29 Jun 2026</span></div>
+          <div class="row"><span class="k">Investment option</span><span class="v">Growth (Diversified)</span></div>
+          <div class="row"><span class="k">Withdrawal amount</span><span class="v">$200.00</span></div>
+          <div class="row"><span class="k">Fees (incl GST)</span><span class="v">Nil</span></div>
+          <div class="row"><span class="k">Proceeds (net of fees)</span><span class="v">$200.00</span></div>
+        </div>
+        <div class="disc">No money moves until you press Confirm. Proceeds are paid to your nominated account.</div>
+        <div class="apinote">POST /transactions/withdraw {amount, option} — only after in-app Confirm (CIP)</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta gold" onclick="showToast('Withdrawal submitted — ref TS-WDL-44817.');go('invest')">Confirm</button></div>
+    </section>
+
+    <!-- ============ SWITCH · 1 select ============ -->
+    <section class="screen" id="invest-switch-select">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Switch</div></div>
+      <div class="scroll">
+        <h1 class="t center">Switch your investment</h1>
+        <p class="sub center">Move money from one option to another.</p>
+        <div class="field"><label>Switch out of</label><input value="Growth (Diversified)"></div>
+        <div class="field"><label>Amount to redeem ($)</label><input inputmode="numeric" value="500.00"></div>
+        <div class="field"><label>Switch in to</label><input value="Cash"></div>
+        <p class="note" style="color:var(--muted)">Your switch-in option must be different from the switch-out option.</p>
+        <div class="apinote">capture out option + $ + in option → 2FA required (CIP)</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" onclick="txnConfirm='invest-switch-confirm';go('txn-2fa')">Continue</button></div>
+    </section>
+
+    <!-- ============ SWITCH · 2 confirm ============ -->
+    <section class="screen" id="invest-switch-confirm">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Confirm switch</div></div>
+      <div class="scroll">
+        <h1 class="t center">Confirm your switch</h1>
+        <p class="sub center">Please review before we submit your instruction.</p>
+        <div class="card" style="margin-top:16px">
+          <div class="row"><span class="k">Date</span><span class="v">29 Jun 2026</span></div>
+          <div class="row"><span class="k">Switch out option</span><span class="v">Growth (Diversified)</span></div>
+          <div class="row"><span class="k">Switch out amount ($)</span><span class="v">$500.00</span></div>
+          <div class="row"><span class="k">Switch in option</span><span class="v">Cash</span></div>
+          <div class="row"><span class="k">Fees (incl GST)</span><span class="v">Nil</span></div>
+        </div>
+        <div class="disc">No money moves until you press Confirm. The redeemed amount is reinvested into the switch-in option.</div>
+        <div class="apinote">POST /transactions/switch {out_option, amount, in_option} — only after in-app Confirm (CIP)</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta gold" onclick="showToast('Switch submitted — ref TS-SWT-20554.');go('invest')">Confirm</button></div>
+    </section>
+
+    <!-- ============ MANAGE INVESTMENT & DIRECT DEBIT ============ -->
+    <section class="screen" id="manage">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Manage</div></div>
+      <div class="scroll">
+        <h1 class="t">Manage your investment</h1>
+        <p class="sub">Change, pause or cancel — anytime.</p>
+        <div class="listcard" style="margin-top:14px">
+          <div class="li" onclick="go('mi-amount')"><div class="ic">✏️</div><div style="flex:1"><h4>Change monthly amount</h4><p>Currently $100 / mo · requires 2FA</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="txnToast='Investing paused — you can resume anytime.';txnHome='manage';go('txn-2fa')"><div class="ic">⏸️</div><div style="flex:1"><h4>Pause investing</h4><p>Stop future debits, keep your balance · requires 2FA</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('ddr-cancel')"><div class="ic">🛑</div><div style="flex:1"><h4>Cancel direct debit</h4><p>Stop the direct debit authority</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="go('close-account')"><div class="ic">🚪</div><div style="flex:1"><h4>Close account &amp; withdraw all</h4><p>Withdraw your balance and close</p></div><span class="chev">›</span></div>
+        </div>
+        <div class="disc">Any instruction that moves money (invest, withdraw, switch) requires 2-factor authentication and an in-app confirmation.</div>
+      </div>
+    </section>
+
+    <!-- ============ CANCEL DIRECT DEBIT ============ -->
+    <section class="screen" id="ddr-cancel">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Cancel direct debit</div></div>
+      <div class="scroll" style="text-align:center">
+        <div class="warnic" style="background:#FBF1DD;color:var(--gold2)">!</div>
+        <h1 class="t center" style="margin-top:14px">Cancel your direct debit?</h1>
+        <p class="sub center">Future debits will stop. You can set it up again anytime.</p>
+        <div class="disc" style="text-align:left">Cancelling this Direct Debit Request authority will not terminate your contract or remove your liability to make the payments you have agreed to with the Payment Initiator (DDR Service Agreement, clause 5).</div>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta" style="background:var(--err);color:#fff" onclick="txnToast='Direct debit cancelled.';txnHome='home';go('txn-2fa')">Cancel direct debit</button>
+        <button class="cta outline" onclick="back()">Keep my direct debit</button>
+      </div>
+    </section>
+
+    <!-- ============ KYC PENDING / MANUAL REVIEW ============ -->
+    <section class="screen" id="kyc-pending">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Identity</div></div>
+      <div class="scroll" style="text-align:center">
+        <div class="warnic" style="background:#FBF1DD;color:var(--gold2)">⏳</div>
+        <h1 class="t center" style="margin-top:14px">We're verifying your identity</h1>
+        <p class="sub center">This usually takes a few minutes but can take up to 1 business day. We'll let you know as soon as it's done — you can keep exploring in the meantime.</p>
+        <div class="infobox" style="text-align:left">Your details are being checked against third-party records (including the Document Verification Service) for the purposes of the AML/CTF Act 2006.</div>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" onclick="go('home')">Got it</button></div>
+    </section>
+
+    <!-- ============ DISHONOURED / FAILED PAYMENT ============ -->
+    <section class="screen" id="payment-failed">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Direct debit</div></div>
+      <div class="scroll" style="text-align:center">
+        <div class="warnic">!</div>
+        <h1 class="t center" style="margin-top:14px">Your last debit didn't go through</h1>
+        <p class="sub center">There may not have been enough funds on the debit date. We'll automatically retry when funds are available; a late settlement fee of $9.90 may apply.</p>
+        <div class="disc" style="text-align:left">It's your responsibility to ensure clear funds are available in your nominated account on the due date (DDR Service Agreement).</div>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta green" onclick="txnConfirm='mi-ddr';txnToast='';go('txn-2fa')">Update bank account</button>
+        <button class="cta outline" onclick="go('home')">Dismiss</button>
+      </div>
+    </section>
+
+    <!-- ============ PORT STATUS (in progress / failed) ============ -->
+    <section class="screen" id="gp-port-status">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Port status</div></div>
+      <div class="scroll">
+        <h1 class="t">Porting your number</h1>
+        <p class="sub">Transfer to eSIM · usually within 24 hours.</p>
+        <div class="card" style="margin-top:14px" id="port-ok">
+          <div class="step"><span class="num" style="background:var(--ok);color:#fff">✓</span><span>Port request submitted</span></div>
+          <div class="step"><span class="num">●</span><span>In progress with your carrier (~24 hrs)</span></div>
+          <div class="step"><span class="num" style="background:#D9D4C6;color:#fff">3</span><span>Number active on The Supper</span></div>
+        </div>
+        <div class="banner" id="port-fail" style="display:none">🛑 Port rejected — your carrier couldn't match the account details. Please check your account number and resubmit.</div>
+        <div class="infobox">Your current service stays active until the port completes.</div>
+        <span class="demo" onclick="document.getElementById('port-fail').style.display='block';document.getElementById('port-ok').style.display='none'">▸ Demo: port failed</span>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta green" onclick="go('journey')">Continue setup</button>
+        <button class="cta outline" onclick="go('gp-port')">Re-enter port details</button>
+      </div>
+    </section>
+
+    <!-- ============ MANAGE PLAN ============ -->
+    <section class="screen" id="plan-manage">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Your plan</div></div>
+      <div class="scroll">
+        <h1 class="t">Manage your plan</h1>
+        <p class="sub">Change or cancel your mobile / internet plan.</p>
+        <div class="listcard" style="margin-top:14px">
+          <div class="li" onclick="go('gp-sim1')"><div class="ic">📶</div><div style="flex:1"><h4>Change plan</h4><p>Currently Unlimited · 100GB</p></div><span class="chev">›</span></div>
+          <div class="li" onclick="showToast('Plan cancellation request submitted.')"><div class="ic">🛑</div><div style="flex:1"><h4>Cancel plan</h4><p>End your mobile / internet plan</p></div><span class="chev">›</span></div>
+        </div>
+        <div class="disc">Cancelling your plan may affect bill-linked investing. Your investment balance is unaffected.</div>
+      </div>
+    </section>
+
+    <!-- ============ SESSION TIMEOUT / RE-AUTH ============ -->
+    <section class="screen" id="session-expired">
+      <div class="appbar"><div class="abtitle">Session</div></div>
+      <div class="scroll" style="text-align:center">
+        <div class="warnic" style="background:#FBF1DD;color:var(--gold2)">🔒</div>
+        <h1 class="t center" style="margin-top:14px">Session timed out</h1>
+        <p class="sub center">For your security we signed you out after a period of inactivity. Please sign in again — you'll pick up right where you left off.</p>
+      </div>
+      <div style="padding:8px 26px 26px"><button class="cta green" onclick="go('login')">Sign in again</button></div>
+    </section>
+
+    <!-- ============ CLOSE ACCOUNT / FULL WITHDRAWAL ============ -->
+    <section class="screen" id="close-account">
+      <div class="appbar"><div class="back" onclick="back()">‹</div><div class="abtitle">Close account</div></div>
+      <div class="scroll" style="text-align:center">
+        <div class="warnic">!</div>
+        <h1 class="t center" style="margin-top:14px">Close your account?</h1>
+        <p class="sub center">We'll withdraw your full balance to your nominated account, cancel your direct debit, and close your account. This can't be undone.</p>
+        <div class="disc" style="text-align:left">Withdrawals require 2-factor authentication and an in-app confirmation. Final proceeds (net of any fees) are paid to your nominated account.</div>
+      </div>
+      <div style="padding:8px 26px 26px">
+        <button class="cta" style="background:var(--err);color:#fff" onclick="txnConfirm='invest-withdraw-confirm';go('txn-2fa')">Withdraw all &amp; close</button>
+        <button class="cta outline" onclick="back()">Keep my account</button>
+      </div>
+    </section>
+
+    </div><!--/viewport-->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div><!--/device-->
+  <div class="caption" id="caption"></div>
+ </div>
+</div>
+
+<!-- full DDR + Service Agreement (CIP: provided in full) -->
+<div class="index" id="ddrmodal">
+ <div class="indexpanel" style="max-width:780px">
+  <span class="close" onclick="closeDDR()">✕</span>
+  <h2>Direct Debit Request &amp; Service Agreement</h2>
+  <div class="note">Provided in full, as required. Service provider: Split Payments Pty Ltd (currently called Zepto).</div>
+  <div style="margin-top:16px;max-height:62vh;overflow:auto;font-size:13px;line-height:1.55;color:var(--ink);padding-right:6px">
+    <h3 style="color:var(--green);font-family:var(--serif);margin:0 0 6px">Direct Debit Request</h3>
+    <p>You request and authorise <b>Split Payments Pty Ltd (currently called Zepto)</b> (User ID #492448, 531942, 543948, 543950, 543949, 543954, 538925, 543947, 543955, 543956, 543957, 543958, 543962, 613600, 613601, 613602, 613603, 613604, 613605, 613606, 613607, 613608, 613609) on behalf of the Payment Initiator with whom you have a direct debit agreement, to arrange through its own financial institution, to debit from your nominated account any amount the Payment Initiator has deemed payable by you.</p>
+    <p>This debit or charge will be made through the Bulk Electronic Clearing System (BECS) from your account held at the financial institution you have nominated below and will be subject to the terms and conditions of the Direct Debit Request Service Agreement.</p>
+    <p>Split Payments does not accept any liability for the provision, merchantable quality or fitness for purpose of the underlying goods or services provided to the User by the Payment Initiator and/or merchant and therefore the User holds Split Payments harmless for any claim that may arise from the non-provision of services by the Payment Initiator and/or merchant or any other claim that may be made against the Payment Initiator and/or merchant under Consumer Law.</p>
+    <h3 style="color:var(--green);font-family:var(--serif);margin:16px 0 6px">Terms and Conditions of Split Payments Direct Debit Request (DDR) Service Agreement</h3>
+    <ol style="padding-left:18px;margin:0">
+      <li style="margin-bottom:8px"><b>INITIAL TERMS</b> By agreeing to a Direct Debit Request, Zepto will debit your nominated account for the amounts and at the frequency of payments as agreed between you and the Payment Initiator. Zepto has been contracted by the Payment Initiator to collect direct debit payments from you and does not provide any goods or services to you.</li>
+      <li style="margin-bottom:8px"><b>CHANGE OF TERMS</b> The terms of this Agreement or a DDR may be varied at any time by giving you at least 30 days' written notice. This is managed through the Zepto Platform.</li>
+      <li style="margin-bottom:8px"><b>DEFERRING OR STOPPING A PAYMENT</b> Should you wish to defer a payment to another date you must contact the Payment Initiator before the date of that payment to request the deferment. Deferments are entirely at the discretion of the Payment Initiator. You may request to stop an individual payment through the Zepto platform however you will still be liable to make this payment to the Payment Initiator.</li>
+      <li style="margin-bottom:8px"><b>ALTERING THE SCHEDULE</b> Should you wish to alter the payment frequency or Day to Debit contact the Payment Initiator. Altering schedule is solely at the discretion of the Payment Initiator. The Payment Initiator may charge a fee for this service. The Payment Initiator shall notify you of these fees. Any changes made will not affect the total amount you would otherwise have paid over the minimum term of your Contract.</li>
+      <li style="margin-bottom:8px"><b>CANCELLING THE PAYMENTS</b> You can cancel this Direct Debit Request Authority at any time by contacting the Payment Initiator or Zepto. Cancellation of the authority to debit your account will not terminate your contract or remove your liability to make the payments you have agreed to with the Payment Initiator.</li>
+      <li style="margin-bottom:8px"><b>LIABILITY</b> If you stop or cancel either a DDR or an individual debit payment as a result of a variation to the terms of this Direct Debit Service Agreement or a DDR by Zepto or the Payment Initiator, no penalty will be imposed on you.</li>
+      <li style="margin-bottom:8px"><b>DISPUTES</b> If you dispute any debit payment, you must notify the Payment Initiator immediately. The Payment Initiator will respond to your dispute within 7 working days and will immediately refund the amount of the debit if they are not able to substantiate the reason for it. If you do not receive a satisfactory response from the Payment Initiator to your dispute, contact Zepto who will respond to you with an answer to your claim within 5 business days if your claim is lodged within 12 months of the disputed drawing, or within 30 business days if your claim is lodged after 12 months from the disputed drawing.</li>
+      <li style="margin-bottom:8px"><b>BUSINESS DAYS</b> When the day to debit falls on a weekend or public holiday the debit will be initiated on the next business day.</li>
+      <li style="margin-bottom:8px"><b>DISHONOURED PAYMENTS</b> It is your responsibility to ensure that on the due date clear funds are available in your nominated account to meet the direct debit payment. Should your payment be dishonoured, you authorise Zepto to debit your account when clear funds become available in your nominated bank account.</li>
+      <li style="margin-bottom:8px"><b>ENQUIRIES</b> Please direct enquiries to support@zepto.com.au.</li>
+      <li style="margin-bottom:8px"><b>PRIVACY</b> Zepto will keep information relating to your nominated account confidential in accordance with Zepto's Privacy Policy, available at zepto.com.au/privacy.</li>
+      <li style="margin-bottom:8px"><b>YOUR OTHER RESPONSIBILITIES</b> In addition to those already mentioned, you are responsible for ensuring that your nominated account is able to accept direct debits. If it is not, it is your responsibility to provide Zepto with a new account number.</li>
+    </ol>
+  </div>
+  <button class="cta green" style="margin-top:14px" onclick="closeDDR()">Close</button>
+ </div>
+</div>
+
+<!-- screen index -->
+<div class="index" id="index">
+ <div class="indexpanel">
+  <span class="close" onclick="closeIndex()">✕</span>
+  <h2>All screens</h2>
+  <div class="note">Jump to any screen. Grouped by flow.</div>
+  <div class="idxgrid" id="idxgrid"></div>
+ </div>
+</div>
+
+<script>
+const CAPTIONS = {
+ splash:["1 · Splash","Brand intro — deep green + gold, ‘Everyone gets a bite’."],
+ onboarding:["2 · Onboarding","3-slide brand intro carousel → Get started → Login."],
+ login:["3 · Login (app AuthScreen)","Sign in → on success → ‘How would you like to get started?’"],
+ signup:["3 · Sign Up","Create account → verify email → log in."],
+ 'confirm-email':["3 · Verify email","6-digit code (ConfirmSignUp) → Login."],
+ forgot:["3 · Forgot password","Request a reset code by email."],
+ 'forgot-reset':["3 · Reset password","Enter code + set new password."],
+ choose:["4 · How would you like to get started?","Post-login: Micro-invest only vs Get a plan."],
+ 'mi-amount':["5 · Micro-invest amount","Monthly contribution, $10–$2,000 slider."],
+ 'mi-etf':["Set up · ETF selection","Choose your ETFs (step 1 of 6)."],
+ 'mi-verify':["10 · Verify phone (2FA)","Required before direct-debit setup (CIP)."],
+ 'mi-ddr':["11 · Direct debit & bank","DDR consent + nominated account (merged)."],
+ 'mi-review':["13 · Review & confirm","In-app instruction confirmation (date, option, amount, fees)."],
+ home:["15 · Home (dashboard)","Portfolio value, return, bill-linked investing."],
+ invest:["16 · Invest tab","Holdings, add money, switch options."],
+ bills:["17 · Bills building wealth","Investing generated from bills."],
+ learn:["18 · Learn tab","Education + required disclosures."],
+ profile:["19 · Profile","Account, security, operator disclosure."],
+ journey:["2 · Your Journey hub","Post-login checklist. GET /status drives progress + current step."],
+ 'cmp-docs':["Compliance 1/3 · Documents & disclosures","PDS, FSG, T&Cs, Privacy + long-form disclaimer."],
+ 'cmp-suit':["Compliance 2/3 · Suitability","Knock-out questions + TMD target-market confirmation."],
+ 'cmp-id':["Compliance 3/3 · Identity & tax","KYC disclaimer, personal details (DVS), tax residency/TFN."],
+ 'txn-2fa':["Transaction · 2FA","Required before every invest / withdraw / switch (CIP)."],
+ 'invest-add-amount':["Add money · amount","Enter amount + option → 2FA."],
+ 'invest-add-confirm':["Add money · confirm","Date, option, amount, fees, total (gross)."],
+ 'invest-withdraw-amount':["Withdraw · amount","Amount + source option → 2FA."],
+ 'invest-withdraw-confirm':["Withdraw · confirm","Date, option, amount, fees, proceeds (net)."],
+ 'invest-switch-select':["Switch · select","Out option + $ + in option → 2FA."],
+ 'invest-switch-confirm':["Switch · confirm","Date, out, $, in, fees."],
+ 'gp-number':["Get a plan · Number selection","New Number (instant) vs Port existing — two workflows."],
+ 'gp-port':["Get a plan · Port In","Port form: number, carrier, account; ~24 hrs."],
+ 'gp-sim1':["Get a plan · SIM plan & activation","Choose plan + data."],
+ 'gp-sim2':["Get a plan · eSIM activation","3-step install + activation code."],
+ 'cmp-blocked':["Compliance · Blocked","Second knock-out failed → cannot proceed (CIP)."],
+ 'kyc-failed':["Compliance · KYC failed","Verification failed → upload 2 ID documents (CIP)."],
+ 'kyc-pending':["Identity · Under review","KYC pending / manual review state."],
+ 'manage':["Manage investment","Change amount · pause · cancel direct debit."],
+ 'ddr-cancel':["Cancel direct debit","DDR cancellation + liability note (clause 5)."],
+ 'payment-failed':["Direct debit · Failed","Dishonoured / insufficient funds notice."],
+ 'gp-port-status':["Port status","In progress / failed states."],
+ 'plan-manage':["Manage plan","Change or cancel mobile / internet plan."],
+ 'session-expired':["Session timeout","Re-authentication after inactivity."],
+ 'close-account':["Close account","Full withdrawal + close (2FA)."],
+ 'gp-verify':["Get a plan · Verify phone","2FA OTP."],
+ 'gp-etf':["Get a plan · Choose your ETFs","Select investment options."],
+ 'gp-ddr':["Get a plan · Direct debit & bank","DDR consent + nominated account (merged)."],
+ 'gp-amount':["Get a plan · Investment amount","Monthly contribution."]
+};
+const INDEX_GROUPS = [
+ ["① Initial",[["splash","Splash"],["onboarding","Onboarding (carousel)"],["login","Login"],["signup","↳ Sign Up"],["confirm-email","↳ Verify email"],["forgot","↳ Forgot password"],["forgot-reset","↳ Reset password"],["choose","How would you like to get started?"]]],
+ ["② Micro-invest · Choose Investment",[["mi-etf","Choose your ETFs"],["mi-amount","Set up your investment"],["mi-verify","Verify your phone"],["mi-ddr","Direct Debit"],["mi-review","See it in action + Review"]]],
+ ["Dashboard (tab bar)",[["home","Home"],["invest","Invest"],["bills","Bills"],["learn","Learn"],["profile","Profile"]]],
+ ["③ Your Journey + Compliance",[["journey","Your Journey hub"],["cmp-docs","Documents & disclosures"],["cmp-suit","Suitability + TMD"],["cmp-blocked","↳ Blocked (2nd knock-out)"],["cmp-id","Identity & tax"],["kyc-failed","↳ KYC failed"]]],
+ ["Transactions (Invest tab · 2FA + confirm)",[["invest-add-amount","Add money · amount"],["txn-2fa","2FA (shared)"],["invest-add-confirm","Add · confirm"],["invest-withdraw-amount","Withdraw · amount"],["invest-withdraw-confirm","Withdraw · confirm"],["invest-switch-select","Switch · select"],["invest-switch-confirm","Switch · confirm"]]],
+ ["④ Get a plan",[["gp-number","Number selection"],["gp-port","↳ Port in"],["journey","Your Journey hub"],["cmp-docs","Compliance (shared)"],["gp-sim1","Choose plan"],["gp-sim2","Activate eSIM"],["gp-etf","Choose Investment"],["gp-amount","Set up your investment"],["gp-verify","Verify your phone"],["gp-ddr","Direct Debit"],["gp-review","See it in action + Review"]]],
+ ["Manage & edge states",[["manage","Manage investment"],["ddr-cancel","↳ Cancel direct debit"],["plan-manage","Manage plan"],["payment-failed","Payment failed"],["kyc-pending","KYC pending"],["gp-port-status","Port status"],["close-account","Close account"],["session-expired","Session timeout"]]]
+];
+const DARK_BG = {splash:true};
+let hist=[];
+function go(id,push=true){
+  const cur=document.querySelector('.screen.active');
+  if(cur){ if(push && cur.id!==id) hist.push(cur.id); if(push && MARK_ON_LEAVE[cur.id]) doneSteps.add(MARK_ON_LEAVE[cur.id]); cur.classList.remove('active'); }
+  const el=document.getElementById(id); if(!el) return;
+  el.classList.add('active'); el.querySelector('.scroll,[class*=scroll]')&&(el.scrollTop=0);
+  const sc=el.querySelector('.scroll'); if(sc) sc.scrollTop=0;
+  document.getElementById('statusbar').className='statusbar'+(el.dataset.dark?' light':'');
+  const cap=CAPTIONS[id]; document.getElementById('caption').innerHTML = cap?('<b>'+cap[0]+'</b> — '+cap[1]):'';
+  clearTimeout(window._splashT);
+  if(id==='splash'){ window._splashT=setTimeout(function(){ var a=document.querySelector('.screen.active'); if(a&&a.id==='splash') go('onboarding'); },2000); }
+  if(id==='onboarding'){ obi=0; obShow(); }
+  if(id==='journey'){ setupJourney(); }
+  if(id==='mi-verify'||id==='gp-verify'||id==='txn-2fa'){ vpReset(id); }
+  if(id==='cmp-suit'){ suitReset(); }
+  if(id==='cmp-id'){ idReset(); }
+  if(id==='mi-review'){ reviewReset('mi'); }
+  if(id==='gp-review'){ reviewReset('gp'); }
+  if(id==='cmp-docs'){ ackReset('docs-ack','docs-continue'); }
+  if(id==='mi-ddr'){ ackReset('mi-ddr-ack','mi-ddr-continue'); }
+  if(id==='gp-ddr'){ ackReset('gp-ddr-ack','gp-ddr-continue'); }
+  closeIndex();
+}
+function back(){ const p=hist.pop(); if(p) go(p,false); }
+function selJourney(card,next){ go(next); }
+function pick(card){ card.parentNode.querySelectorAll('.optcard').forEach(c=>c.classList.remove('sel')); card.classList.add('sel'); }
+function tog(el){ el.classList.toggle('on'); el.querySelector('.bx').textContent=el.classList.contains('on')?'✓':''; }
+function openIndex(){ document.getElementById('index').classList.add('open'); }
+function closeIndex(){ document.getElementById('index').classList.remove('open'); }
+function showToast(msg){ var t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(window._toastT); window._toastT=setTimeout(function(){ t.classList.remove('show'); },2800); }
+function openDDR(){ document.getElementById('ddrmodal').classList.add('open'); }
+function closeDDR(){ document.getElementById('ddrmodal').classList.remove('open'); }
+function gateBtn(chk,btn){ var c=document.getElementById(chk),b=document.getElementById(btn); if(b) b.disabled=!(c&&c.classList.contains('on')); }
+function ackReset(chk,btn){ var c=document.getElementById(chk); if(c){ c.classList.remove('on'); var x=c.querySelector('.bx'); if(x) x.textContent=''; } var b=document.getElementById(btn); if(b) b.disabled=true; }
+function addCountry(){ var box=document.getElementById('foreign-extra'); if(!box) return;
+  var d=document.createElement('div');
+  d.innerHTML='<div class="field"><label>Additional country of tax residency</label><input placeholder="e.g. United Kingdom"></div><div class="field"><label>Tax Identification Number (TIN)</label><input placeholder="Foreign TIN"></div>';
+  box.appendChild(d); }
+let journey='plan';   // 'micro' | 'plan'
+let doneSteps=new Set(['started','numchosen']);
+const MARK_ON_LEAVE={'cmp-docs':'docs','cmp-suit':'suit','cmp-id':'id','gp-sim1':'sim1','gp-sim2':'sim2','gp-verify':'verify','gp-etf':'etf','gp-ddr':'fund','gp-amount':'amount','gp-review':'preview','mi-etf':'metf','mi-amount':'mamount','mi-verify':'mverify','mi-ddr':'mfund','mi-review':'mreview'};
+const GROUPS_PLAN=[
+  {id:'compliance',title:'Compliance',subs:[{key:'docs',t:'Documents & disclosures',go:'cmp-docs'},{key:'suit',t:'Investment suitability + TMD',go:'cmp-suit'},{key:'id',t:'Identity & tax',go:'cmp-id'}]},
+  {id:'sim',title:'SIM & Plan activation',subs:[{key:'sim1',t:'Choose plan',go:'gp-sim1'},{key:'sim2',t:'Activate eSIM',go:'gp-sim2'}]},
+  {id:'setup',title:'Set up your investment',subs:[{key:'etf',t:'Choose Investment',go:'gp-etf'},{key:'amount',t:'Set up your investment',go:'gp-amount'},{key:'verify',t:'Verify your phone',go:'gp-verify'},{key:'fund',t:'Direct Debit',go:'gp-ddr'},{key:'preview',t:'See it in action + Review',go:'gp-review'}]},
+];
+const GROUPS_MICRO=[
+  {id:'compliance',title:'Compliance',subs:[{key:'docs',t:'Documents & disclosures',go:'cmp-docs'},{key:'suit',t:'Investment suitability + TMD',go:'cmp-suit'},{key:'id',t:'Identity & tax',go:'cmp-id'}]},
+  {id:'setup',title:'Choose Investment',subs:[{key:'metf',t:'Choose your ETFs',go:'mi-etf'},{key:'mamount',t:'Set up your investment',go:'mi-amount'},{key:'mverify',t:'Verify your phone',go:'mi-verify'},{key:'mfund',t:'Direct Debit',go:'mi-ddr'},{key:'mreview',t:'See it in action + Review',go:'mi-review'}]},
+];
+function setJourney(j,next){ journey=j; doneSteps=new Set(); if(j==='micro'){ cmpReturn='mi-etf'; } go(next); }
+function setupJourney(){
+  cmpReturn=(journey==='micro')?'mi-etf':'gp-sim1';
+  const groups=(journey==='micro')?GROUPS_MICRO:GROUPS_PLAN;
+  const allKeys=[]; groups.forEach(g=>g.subs.forEach(s=>allKeys.push(s.key)));
+  const currentKey=allKeys.find(k=>!doneSteps.has(k));
+  let html='';
+  groups.forEach(g=>{
+    const sts=g.subs.map(s=>doneSteps.has(s.key)?'done':(s.key===currentKey?'cur':'todo'));
+    const gdone=sts.every(s=>s==='done'), gcur=sts.includes('cur');
+    const dcls=gdone?'done':(gcur?'cur':'todo');
+    const pill=gdone?'<span class="pill green">Done</span>':(gcur?'<span class="pill gold">In Progress</span>':'<span class="pill grey">To do</span>');
+    let kids='';
+    g.subs.forEach((s,i)=>{ const st=sts[i];
+      const mk=st==='done'?'<span class="kmark ok">✓</span>':(st==='cur'?'<span class="kmark gold">●</span>':'<span class="kmark">○</span>');
+      kids+='<div class="kid"'+(s.go?(' onclick="go(\''+s.go+'\')"'):'')+'><span class="dot '+st+'"></span>'+s.t+mk+'</div>'; });
+    html+='<div class="grp'+(gcur?' cur':'')+(gdone?' isdone':'')+'"><div class="grphead" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'.caret\').classList.toggle(\'open\')"><span class="dot '+dcls+'"></span><h4>'+g.title+'</h4>'+pill+'<span class="caret'+(gcur?' open':'')+'">›</span></div><div class="kids'+(gcur?' open':'')+'">'+kids+'</div></div>';
+  });
+  document.getElementById('jr-groups').innerHTML=html;
+  const total=allKeys.length, done=allKeys.filter(k=>doneSteps.has(k)).length, pct=Math.round(done/total*100);
+  document.getElementById('jr-step').textContent='Step '+(currentKey?done+1:total)+' of '+total;
+  document.getElementById('jr-pct').textContent=pct+'% complete';
+  document.getElementById('jr-bar').style.width=pct+'%';
+  const cont=document.getElementById('journey-continue'), allset=document.getElementById('jr-allset'), sub=document.getElementById('jr-sub');
+  if(!currentKey){ cont.textContent='Go to dashboard'; cont.onclick=function(){go('home');}; allset.style.display='block'; sub.textContent="You're all set."; }
+  else { const cur=groups.reduce((a,g)=>a.concat(g.subs),[]).find(s=>s.key===currentKey);
+    cont.textContent=(done>0?'Continue · ':'Start · ')+(cur&&cur.t?cur.t:''); cont.onclick=function(){ go(cur&&cur.go?cur.go:'cmp-docs'); }; allset.style.display='none';
+    sub.textContent=(journey==='micro')?'Just a few compliance checks left before you’re investing.':'Pick up right where you left off. Everything you need to start investing.'; }
+}
+let obi=0;
+function obShow(){ document.querySelectorAll('#onboarding .obslide').forEach(s=>s.style.display=(+s.dataset.i===obi?'block':'none')); document.querySelectorAll('#onboarding .dots i').forEach((d,k)=>d.classList.toggle('on',k===obi)); var b=document.getElementById('ob-btn'); if(b) b.textContent=obi===2?'Get Started':'Next'; }
+function obNext(){ if(obi<2){ obi++; obShow(); } else { go('login'); } }
+function vpSend(id){ const s=document.getElementById(id); s.querySelector('.vp-otp').style.display='block'; s.querySelector('.vp-send').style.display='none'; const vb=s.querySelector('.vp-verify'); if(vb) vb.style.display='flex';
+  clearTimeout(window._otpT); window._otpT=setTimeout(function(){ var a=document.querySelector('.screen.active'); if(a&&a.id===id&&vb) vb.click(); },1300); }
+function vpReset(id){ const s=document.getElementById(id); if(!s) return; const e=s.querySelector('.vp-enter'); if(!e) return; e.style.display='block'; s.querySelector('.vp-otp').style.display='none'; s.querySelector('.vp-send').style.display='flex'; s.querySelector('.vp-verify').style.display='none'; }
+function taxRes(foreign){ const f=document.getElementById('foreignbox'), t=document.getElementById('tfnbox'); if(f) f.style.display=foreign?'block':'none'; if(t) t.style.display=foreign?'none':'block'; }
+function showMsg(t){ const m=document.getElementById('suit-msg'); if(!m) return; m.textContent=t||''; m.style.display=t?'block':'none'; }
+function ko(b){ const seg=b.parentNode; seg.querySelectorAll('.yn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); b.closest('[data-q]').dataset.answer=b.textContent.trim().toLowerCase(); showMsg(''); }
+function suitReset(){ document.querySelectorAll('#cmp-suit [data-q]').forEach(c=>{ delete c.dataset.answer; c.querySelectorAll('.yn').forEach(y=>y.classList.remove('on')); }); const sec=document.getElementById('ko-second'); if(sec) sec.style.display='none'; var t=document.getElementById('suit-tmd-chk'); if(t){ t.classList.remove('on'); var b=t.querySelector('.bx'); if(b) b.textContent=''; } showMsg(''); }
+function suitContinue(){
+  const ans=q=>{ const el=document.querySelector('#cmp-suit [data-q="'+q+'"]'); return el?el.dataset.answer:undefined; };
+  const tmd=document.getElementById('suit-tmd-chk').classList.contains('on');
+  const f=[ans('f1'),ans('f2'),ans('f3')];
+  if(f.some(x=>!x)){ showMsg('Please answer all questions.'); return; }
+  if(f.every(x=>x==='yes')){ if(!tmd){ showMsg('Please confirm the TMD to continue.'); return; } go('cmp-id'); return; }
+  const sec=document.getElementById('ko-second');
+  if(sec.style.display==='none'){ sec.style.display='block'; showMsg(''); sec.scrollIntoView({behavior:'smooth'}); return; }
+  const s=[ans('s1'),ans('s2'),ans('s3')];
+  if(s.some(x=>!x)){ showMsg('Please answer all questions.'); return; }
+  if(s.every(x=>x==='yes')){ if(!tmd){ showMsg('Please confirm the TMD to continue.'); return; } go('cmp-id'); }
+  else { go('cmp-blocked'); }
+}
+let txnConfirm='',txnToast='',txnHome='home';
+function txnVerify(){ if(txnToast){ var m=txnToast; txnToast=''; showToast(m); go(txnHome||'home'); } else { go(txnConfirm); } }
+let seeNext='gp-ddr';
+function idGate(){
+  const ok=document.getElementById('id-ack').classList.contains('on');
+  document.getElementById('id-continue').disabled=!ok;
+  const m=document.getElementById('id-msg'); if(m) m.style.display=ok?'none':'block';
+}
+function idReset(){
+  var c=document.getElementById('id-ack'); if(c){ c.classList.remove('on'); var b=c.querySelector('.bx'); if(b) b.textContent=''; }
+  idGate();
+}
+function reviewSend(p){
+  var otp=document.getElementById(p+'-2fa-otp'); if(otp) otp.style.display='block';
+  var send=document.getElementById(p+'-2fa-send'); if(send) send.style.display='none';
+  var note=document.getElementById(p+'-2fa-note'); if(note) note.textContent='Enter the 6-digit code we sent to your mobile ending ••• 678.';
+  clearTimeout(window['_rs_'+p]);
+  window['_rs_'+p]=setTimeout(function(){ var ok=document.getElementById(p+'-2fa-ok'); if(ok) ok.style.display='block'; var c=document.getElementById(p+'-confirm'); if(c) c.disabled=false; },1300);
+}
+function reviewReset(p){
+  var otp=document.getElementById(p+'-2fa-otp'); if(otp) otp.style.display='none';
+  var send=document.getElementById(p+'-2fa-send'); if(send) send.style.display='flex';
+  var ok=document.getElementById(p+'-2fa-ok'); if(ok) ok.style.display='none';
+  var c=document.getElementById(p+'-confirm'); if(c) c.disabled=true;
+  var note=document.getElementById(p+'-2fa-note'); if(note) note.textContent='Tap “Send code” and we\'ll text a 6-digit code to your mobile ending ••• 678.';
+}
+function ynPick(b){ b.parentNode.querySelectorAll('.yn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); }
+function tfn(show){ var el=document.getElementById('tfnbox'); if(el) el.style.display=show?'block':'none'; }
+function pickLi(li){ li.parentNode.querySelectorAll('.li').forEach(x=>{var r=x.querySelector('.radio'); if(r){r.style.background='';r.style.boxShadow='';r.style.borderColor='var(--line)';}}); var r=li.querySelector('.radio'); if(r){r.style.borderColor='var(--green)';r.style.background='var(--green)';r.style.boxShadow='inset 0 0 0 4px #fff';} }
+function multi(card){ card.classList.toggle('sel'); var bx=card.querySelector('.bx'); if(!bx) return; if(card.classList.contains('sel')){bx.style.background='var(--green)';bx.style.border='none';bx.style.color='#fff';bx.style.display='flex';bx.style.alignItems='center';bx.style.justifyContent='center';bx.textContent='✓';} else {bx.style.background='transparent';bx.style.border='2px solid var(--line)';bx.textContent='';} }
+function miAmt(v){ v=+v;
+  var rng=document.getElementById('mi-rng'); if(rng){ var pct=(v-10)/19.9; rng.style.background='linear-gradient(90deg,var(--gold) '+pct+'%,var(--line) '+pct+'%)'; }
+  var disp=document.getElementById('mi-amt-display'); if(disp) disp.innerHTML='$'+v.toLocaleString('en-AU')+'.00<small>per month</small>';
+  var dd=document.getElementById('mi-dd-amt'); if(dd) dd.textContent='$'+v.toLocaleString('en-AU')+'.00';
+  var r=0.08/12, n=240, fv=v*((Math.pow(1+r,n)-1)/r);
+  var g=document.getElementById('mi-grow'); if(g) g.textContent='$'+(Math.round(fv/100)*100).toLocaleString('en-AU');
+  document.querySelectorAll('#mi-amount .chip').forEach(function(c){ c.classList.toggle('on', c.textContent.replace(/[^0-9]/g,'')===String(v)); });
+}
+function miChip(v){ var rng=document.getElementById('mi-rng'); if(rng) rng.value=v; miAmt(v); }
+function gpAmt(v){ v=+v;
+  var rng=document.getElementById('gp-rng'); if(rng){ var pct=(v-10)/19.9; rng.style.background='linear-gradient(90deg,var(--gold) '+pct+'%,var(--line) '+pct+'%)'; }
+  var disp=document.getElementById('gp-amt-display'); if(disp) disp.innerHTML='$'+v.toLocaleString('en-AU')+'.00<small>per month</small>';
+  var r=0.08/12, n=360, fv=v*((Math.pow(1+r,n)-1)/r);
+  var g=document.getElementById('gp-grow'); if(g) g.textContent='$'+(Math.round(fv/100)*100).toLocaleString('en-AU');
+  document.querySelectorAll('#gp-amount .chip').forEach(function(c){ c.classList.toggle('on', c.textContent.replace(/[^0-9]/g,'')===String(v)); });
+}
+function gpChip(v){ var rng=document.getElementById('gp-rng'); if(rng) rng.value=v; gpAmt(v); }
+function buildIndex(){
+  const g=document.getElementById('idxgrid'); let n=1;
+  INDEX_GROUPS.forEach(([title,items])=>{
+    const d=document.createElement('div'); d.className='idxgrp';
+    d.innerHTML='<h3>'+title+'</h3>'+items.map(([id,label])=>'<a onclick="go(\''+id+'\')">'+label+'</a>').join('');
+    g.appendChild(d);
+  });
+}
+buildIndex();
+go('splash');
+</script>
+</body>
+</html>
